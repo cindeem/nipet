@@ -1,0 +1,11 @@
+.. -*- mode: rst -*-
+.. vim:syntax=rst
+
+.. _changes:
+
+version
+~~~~~~~
+
+* 0.20121203 (Mon, Dec 03, 2012)
+
+  * Initial release.
