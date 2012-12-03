@@ -6,3 +6,19 @@
 #   copyright and license terms.
 #
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ##
+
+"""
+Main Packkage Modules
+=====================
+
+ #. frametimes : for working with the timing info for dynamic data
+
+ #. logan : Logan Graphical Analysis : reversible tracers
+
+ #. patlak : Gjedde-Patlak  Graphical Analysis : irreversible tracers
+
+ #. viewer : Simple viewer for viewing Time Activity Curves, Logan plots etc
+
+ #. suvr : standardized uptake ratio
+
+"""
