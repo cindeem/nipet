@@ -10,17 +10,33 @@ class TestFrametime(TestCase):
 
     def test_class(self):
         ft = frametime.FrameTime()
-        assert_equal(ft.data, np.array([[0], [0], [0], [0]])) 
         assert_equal(ft.isempty(), True)
         
-    def test_helpers(self): 
+    def test_check_frame(self): 
         ft = frametime.FrameTime()
-        frame = ft._entry_to_frame(np.random.random(ft.data_size))
-        badframe = ft._entry_to_frame(np.random.random(ft.data_size + 1))
+        frame = ft._entry_to_frame(np.random.random(ft.col_num))
+        badframe = ft._entry_to_frame(np.random.random(ft.col_num + 1))
         assert_equal(ft._check_frame(frame), True)
         assert_equal(ft._check_frame(badframe), False)
-        ft.clear()
-        assert_equal(ft.isempty(), True)
+
+    def test_validate_frames(self):
+        frames = np.random.random((5, 3))
+        ft = frametime.FrameTime()
+        ft.data = frames
+        assert_raises(ft._validate_frames(), Error)
+        frames = np.random.random((5, 4))
+        ft.data = frames
+        assert_raises(ft._validate_frames(), Error)
+
+    def test_delete_frame(self):
+        ft = frametime.FrameTime()
+        frames = np.array([[1, 2, 3, 4],
+                           [2, 3, 4, 5],
+                           [3, 4, 5, 6]])
+        ft.data = frames
+        ft.delete_frame(1)
+        assert_equal(ft.data, np.array([[1, 2, 3, 4],
+                                        [3, 4, 5, 6]])
 
     @skipUnless(file_exists(some_file))
     def test_from_csv(self):
