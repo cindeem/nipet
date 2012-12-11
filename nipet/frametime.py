@@ -54,6 +54,7 @@ class FrameTime:
             negative frames - exception
             0, 1 indexing (fix?)
             overlapping timing, bad durations - exception
+            Does timing have to overlap exactly?
         """
         curr = 0
         curr_time = 0
@@ -82,7 +83,14 @@ class FrameTime:
     def generate_empty_protocol(self, frame_num):
         """Generates empty csv/excel file with header for frametimes,
         which can then be imported by this class."""
-        pass
+        outarray = np.array(np.zeros(frame_num + 1, self.col_num),\
+                             dtype = 'S3')
+        outarray[0] = ['frame number', 'start time', 'duration', 'stop time']
+        for i, f in enumerate(outarray):
+            if i != 0:
+                f[0] = i
+        return outarray
+
 
     def from_ecat(self, ecat_file):
         """Pulls timing info from ecat and stores in an array"""
