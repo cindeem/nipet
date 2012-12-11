@@ -32,11 +32,13 @@ class FrameTime:
             return False
         return True    
 
-    def delete_frame(self, frame):
+    def delete_frame(self, frame_num):
         """Delete a frame.
         Currently deletes based on position in array.
         Should eventually delete based on frame number."""
-        self.data = np.delete(self.data, frame, 0) 
+        to_delete = self.data[frame_num] 
+        self.data = np.delete(self.data, frame_num, 0) 
+        return to_delete
 
     def _check_frame(self, frame):
         """Checks a frame (1x4 array) for the proper shape,
