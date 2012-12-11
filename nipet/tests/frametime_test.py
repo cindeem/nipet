@@ -1,7 +1,7 @@
 from unittest import TestCase, skipIf, skipUnless
 from numpy.testing import (assert_raises, assert_equal, assert_almost_equal)
 from os.path import exists
-import ..frametime
+import frametime
 
 def file_exists(filename):
     return exists(filename) 
@@ -36,9 +36,8 @@ class TestFrametime(TestCase):
         ft.data = frames
         ft.delete_frame(1)
         assert_equal(ft.data, np.array([[1, 2, 3, 4],
-                                        [3, 4, 5, 6]])
+                                        [3, 4, 5, 6]]))
 
-    @skipUnless(file_exists(some_file))
     def test_from_csv(self):
         try:
             ft = frametime.FrameTime()

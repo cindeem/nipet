@@ -39,8 +39,8 @@ class FrameTime:
     def _check_frame(self, frame):
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
-        return frame.shape[1] == self.col_num 
-                and frame.shape[0] == 1    
+        return frame.shape[0] == self.col_num \
+                and True if len(frame.shape) == 1 else frame.shape[1] == 1 
                 and frame[3] == frame[2] - frame[1] 
 
     def _validate_frames(self):
@@ -55,8 +55,7 @@ class FrameTime:
         """
         curr = 0
         curr_time = 0
-        for i in enumerate(a.shape[0]):
-            frame = self.data[i] 
+        for n, frame in enumerate(self.data):
             if frame[0] < 0:
                 raise Error("Negative frame number") #make Error classes
             if frame[0] < curr:
@@ -90,20 +89,20 @@ class FrameTime:
     def from_csv(self, csv_filename, units = 'sec'): 
         """Pulls timing info from csv and stores in an array"""
         try:
-            infile = open(csv_filename, 'r')
-            reader = csv.reader(infile)
-            header = reader.readline()
-            if header[0].isdigit():
-                head = 0
-            else:
-                head = 1
+            with open csv_filename as infile:
+                header = infile.readline()
+                if header[0].isdigit():
+                    head = 0
+                else:
+                    head = 1
             self.data = np.loadtxt(csv_filename, delimiter = ',', skiprows = head)
         except:
             raise IOError("Error reading file. Check if file exists or if file is blank")
 
     def from_excel(excel_file, units = 'sec'):
         """Pulls timing info from excel file and stores in an array"""
-        pass
+        df = ExcelFile(excel_file).parse('Sheet1') #dataframe
+        df.to_records()
 
     def to_csv(units = 'sec'):
         """Export timing info to csv file"""
