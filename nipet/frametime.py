@@ -40,13 +40,15 @@ class FrameTime:
         self.data = np.delete(self.data, frame_num, 0) 
         return to_delete
 
-    def _to_min(self):
+    def to_min(self):
+        """Returns the frametime array in minutes."""
         if self.units == 'min':
             return self.data
         elif self.units == 'sec':
             return 1/60.0 * self.data
 
-    def _to_sec(self):
+    def to_sec(self):
+        """Returns the frametime array in seconds."""
         if self.units == 'sec':
             return self.data
         elif self.units == 'min':
