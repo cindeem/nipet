@@ -72,19 +72,29 @@ class TestFrametime(TestCase):
             print "Welp."   
 
     def test_get_data(self):
-        """Should test get_array, to_min, and to_sec"""
+        """Test get_array, to_min, and to_sec"""
         ft = frametime.FrameTime()
         frames = np.array([[1, 2, 3, 4],
                            [2, 3, 4, 5],
                            [3, 4, 5, 6]])
         min_frames = frames * 1/60.0
+        empty = np.array(None, dtype=object)
         ft.data = frames
+
+        assert_equal(ft.get_array(), empty)
+        assert_equal(ft.to_sec(), empty)
+        assert_equal(ft.to_min(), empty)
+
+        ft.units = 'sec'
         assert_equal(ft.get_array(), frames)
+        assert_almost_equal(ft.get_array('min'), min_frames)
         assert_almost_equal(ft.to_sec(), frames)
         assert_almost_equal(ft.to_min(), min_frames)
-        ft.units = 'min'
+
         ft.data = min_frames
-        assert_equal(ft.get_array(), min_frames)
+        ft.units = 'min'
+        assert_equal(ft.get_array(), frames)
+        assert_equal(ft.get_array('min'), min_frames)
         assert_almost_equal(ft.to_sec(), frames)
         assert_almost_equal(ft.to_min(), min_frames)
 
