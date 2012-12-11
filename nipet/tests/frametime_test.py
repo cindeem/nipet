@@ -36,10 +36,10 @@ class TestFrametime(TestCase):
         ft = frametime.FrameTime()
         ft.data = frames
         #this works in manual testing
-        assert_raises(ft._validate_frames, ValueError)
+        assert_raises(ValueError, ft._validate_frames)
         frames = np.random.random((5, 4))
         ft.data = frames
-        assert_raises(ft._validate_frames, ValueError)
+        assert_raises(ValueError, ft._validate_frames)
         frames = np.array([[1, 4, 5, 1], 
                            [2, 5, 8, 3],
                            [4, 8, 14, 6]])
