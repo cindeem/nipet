@@ -40,6 +40,20 @@ class FrameTime:
         self.data = np.delete(self.data, frame_num, 0) 
         return to_delete
 
+    def _to_min(self):
+        if self.units == 'min':
+            return self.data
+        elif self.units == 'sec':
+            return 1/60.0 * self.data
+
+    def _to_sec(self):
+        if self.units == 'sec':
+            return self.data
+        elif self.units == 'min':
+            return 60.0 * self.data
+
+
+
     def _check_frame(self, frame):
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
@@ -85,7 +99,7 @@ class FrameTime:
     def generate_empty_protocol(self, frame_num):
         """Generates empty csv/excel file with header for frametimes,
         which can then be imported by this class."""
-        outarray = np.array(np.zeros((frame_num + 1, self.col_num)),\
+        outarray = np.array(np.zeros((frame_num + 1, self.col_num)), \
                              dtype = 'S12')
         outarray[0] = ['frame number', 'start time', 'duration', 'stop time']
         for i, f in enumerate(outarray):
@@ -122,7 +136,7 @@ class FrameTime:
         try:
             df = ExcelFile(excel_file).parse('Sheet1') #dataframe
             df.to_records()
-        except:
+        except IOError:
             print "Oops."
         self.units = units
 
@@ -134,5 +148,8 @@ class FrameTime:
 
     def get_array(self, units = 'sec'):
         """Return timing info as numpy array"""
-        return self.data
+        if units == 'min':
+            return self.to_min()
+        else:
+            return self.to_sec()
 
