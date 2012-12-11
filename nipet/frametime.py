@@ -40,7 +40,7 @@ class FrameTime:
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
         return frame.shape[0] == self.col_num \
-                and True if len(frame.shape) == 1 else frame.shape[1] == 1 
+                and True if len(frame.shape) == 1 else frame.shape[1] == 1 \
                 and frame[3] == frame[2] - frame[1] 
 
     def _validate_frames(self):
