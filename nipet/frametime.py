@@ -85,12 +85,15 @@ class FrameTime:
     def generate_empty_protocol(self, frame_num):
         """Generates empty csv/excel file with header for frametimes,
         which can then be imported by this class."""
-        outarray = np.array(np.zeros(frame_num + 1, self.col_num),\
-                             dtype = 'S3')
+        outarray = np.array(np.zeros((frame_num + 1, self.col_num)),\
+                             dtype = 'S12')
         outarray[0] = ['frame number', 'start time', 'duration', 'stop time']
         for i, f in enumerate(outarray):
             if i != 0:
-                f[0] = i
+                f[0] = float(i)
+                f[1] = ''
+                f[2] = ''
+                f[3] = ''
         return outarray
 
 

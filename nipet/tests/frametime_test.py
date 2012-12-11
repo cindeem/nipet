@@ -20,6 +20,17 @@ class TestFrametime(TestCase):
         frame = np.array([1., 6., 33., 27.])
         assert_equal(ft._check_frame(frame), True)
 
+    def test_generate_protocol(self):
+        ft = frametime.FrameTime()
+        protocol = ft.generate_empty_protocol(4)
+        assert_equal(protocol.shape, (5, 4))
+        header = np.array(['frame number', 'start time', 'duration', 'stop time'], dtype = 'S12')
+        line2 = np.array(['2.0', '', '', ''], dtype = 'S12')
+        line4 = np.array(['4.0', '', '', ''], dtype = 'S12')
+        assert_equal(protocol[0], header)
+        assert_equal(protocol[2], line2)
+        assert_equal(protocol[4], line4)
+
     def test_validate_frames(self):
         frames = np.random.random((5, 3))
         ft = frametime.FrameTime()
