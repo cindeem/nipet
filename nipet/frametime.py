@@ -1,6 +1,5 @@
-import csv
 import numpy as np
-from pandas import ExcelFile, readcsv
+from pandas import ExcelFile, read_csv
 
 class FrameTime:
     """
@@ -57,17 +56,17 @@ class FrameTime:
         curr_time = 0
         for n, frame in enumerate(self.data):
             if frame[0] < 0:
-                raise Error("Negative frame number") #make Error classes
+                raise ValueError("Negative frame number") #make Error classes
             if frame[0] < curr:
-                raise Error("Frames out of order") 
+                raise ValueError("Frames out of order") 
             if frame[0] != curr + 1:
                 missing_frames = True
             curr = frame[0]
             if frame[1] < curr_time:
-                raise Error("Overlapping frames") 
+                raise ValueError("Overlapping frames") 
             curr_time = frame[1]
-            if not self._check_frame(frame)
-                raise Error("Bad frame")
+            if not self._check_frame(frame):
+                raise ValueError("Bad frame")
         if missing_frames:
             print "Missing frames"
         return True
@@ -89,13 +88,14 @@ class FrameTime:
     def from_csv(self, csv_filename, units = 'sec'): 
         """Pulls timing info from csv and stores in an array"""
         try:
-            with open csv_filename as infile:
+            with open(csv_filename) as infile:
                 header = infile.readline()
                 if header[0].isdigit():
                     head = 0
                 else:
                     head = 1
             self.data = np.loadtxt(csv_filename, delimiter = ',', skiprows = head)
+            self.units = units
         except:
             raise IOError("Error reading file. Check if file exists or if file is blank")
 
