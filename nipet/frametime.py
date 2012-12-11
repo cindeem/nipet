@@ -16,10 +16,14 @@ class FrameTime:
     """
     Reads or generates timing file for use with graphical analysis.
     Format (number of frames X 4):
-        frame_number, start_time, stop_time, duration    
+        frame_number, start_time, duration, stop_time    
     """ 
     def __init__(self):
         """
+        Reads or generates timing file for use with graphical analysis.
+        Format (number of frames X 4):
+        frame_number, start_time, duration, stop_time    
+
         col_num 
             number of columns
         """
@@ -39,29 +43,12 @@ class FrameTime:
         to_delete = self.data[frame_num] 
         self.data = np.delete(self.data, frame_num, 0) 
         return to_delete
-
-    def to_min(self):
-        """Returns the frametime array in minutes."""
-        if self.units == 'min':
-            return self.data
-        elif self.units == 'sec':
-            return 1/60.0 * self.data
-
-    def to_sec(self):
-        """Returns the frametime array in seconds."""
-        if self.units == 'sec':
-            return self.data
-        elif self.units == 'min':
-            return 60.0 * self.data
-
-
-
     def _check_frame(self, frame):
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
         return frame.shape[0] == self.col_num \
                 and True if len(frame.shape) == 1 else frame.shape[1] == 1 \
-                and frame[3] == frame[2] - frame[1] 
+                and frame[2] == frame[3] - frame[1] 
 
     def _validate_frames(self):
         """ 
@@ -147,6 +134,20 @@ class FrameTime:
 
     def to_excel(self, units = 'sec'):
         """Export timing info to excel file"""
+
+    def to_min(self):
+        """Returns the frametime array in minutes."""
+        if self.units == 'min':
+            return self.data
+        elif self.units == 'sec':
+            return 1/60.0 * self.data
+
+    def to_sec(self):
+        """Returns the frametime array in seconds."""
+        if self.units == 'sec':
+            return self.data
+        elif self.units == 'min':
+            return 60.0 * self.data
 
     def get_array(self, units = 'sec'):
         """Return timing info as numpy array"""
