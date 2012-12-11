@@ -56,7 +56,7 @@ class FrameTime:
             overlapping timing, bad durations - exception
             Does timing have to overlap exactly?
         """
-        curr = 0
+        curr = 0 #can replace with fnum in loop
         curr_time = 0
         for fnum, frame in enumerate(self.data):
             if frame[0] < 0:

@@ -24,6 +24,7 @@ class TestFrametime(TestCase):
         frames = np.random.random((5, 3))
         ft = frametime.FrameTime()
         ft.data = frames
+        #this works in manual testing
         assert_raises(ft._validate_frames, ValueError)
         frames = np.random.random((5, 4))
         ft.data = frames
