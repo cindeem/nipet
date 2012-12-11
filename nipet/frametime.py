@@ -1,6 +1,17 @@
 import numpy as np
 from pandas import ExcelFile, read_csv
 
+def _min_to_sec(minutes):
+    """converts minutes to seconds, 
+    assuming that input is a number representing minutes"""
+    return minutes*60
+
+def _sec_to_min(seconds):
+    """converts seconds to minutes, 
+    assuming that input is a number representing seconds"""
+    return seconds/60.0 
+
+
 class FrameTime:
     """
     Reads or generates timing file for use with graphical analysis.
@@ -13,6 +24,8 @@ class FrameTime:
             number of columns
         """
         self.col_num = 4
+        self.units = None
+        self.data = None
 
     def isempty(self):
         if self.data:
@@ -23,17 +36,7 @@ class FrameTime:
         """Delete a frame.
         Currently deletes based on position in array.
         Should eventually delete based on frame number."""
-        self.data = numpy.delete(self.data, frame, 0) 
-
-    def _min_to_sec(self, minutes):
-        """converts minutes to seconds, 
-        assuming that input is a number representing minutes"""
-        return minutes*60
-
-    def _sec_to_min(self, seconds):
-        """converts seconds to minutes, 
-        assuming that input is a number representing seconds"""
-        return seconds/60.0 
+        self.data = np.delete(self.data, frame, 0) 
 
     def _check_frame(self, frame):
         """Checks a frame (1x4 array) for the proper shape,
@@ -54,7 +57,7 @@ class FrameTime:
         """
         curr = 0
         curr_time = 0
-        for n, frame in enumerate(self.data):
+        for fnum, frame in enumerate(self.data):
             if frame[0] < 0:
                 raise ValueError("Negative frame number") #make Error classes
             if frame[0] < curr:
@@ -94,23 +97,29 @@ class FrameTime:
                     head = 0
                 else:
                     head = 1
-            self.data = np.loadtxt(csv_filename, delimiter = ',', skiprows = head)
+            self.data = np.loadtxt(csv_filename, delimiter = ',', 
+                                    skiprows = head)
             self.units = units
         except:
-            raise IOError("Error reading file. Check if file exists or if file is blank")
+            raise IOError("Error reading file. \
+                           Check if file exists or if file is blank")
 
-    def from_excel(excel_file, units = 'sec'):
+    def from_excel(self, excel_file, units = 'sec'):
         """Pulls timing info from excel file and stores in an array"""
-        df = ExcelFile(excel_file).parse('Sheet1') #dataframe
-        df.to_records()
+        try:
+            df = ExcelFile(excel_file).parse('Sheet1') #dataframe
+            df.to_records()
+        except:
+            print "Oops."
+        self.units = units
 
-    def to_csv(units = 'sec'):
+    def to_csv(self, units = 'sec'):
         """Export timing info to csv file"""
 
-    def to_excel(units = 'sec'):
+    def to_excel(self, units = 'sec'):
         """Export timing info to excel file"""
 
-    def get_array(units = 'sec'):
+    def get_array(self, units = 'sec'):
         """Return timing info as numpy array"""
         return self.data
 
