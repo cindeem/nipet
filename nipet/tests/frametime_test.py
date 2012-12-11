@@ -69,7 +69,23 @@ class TestFrametime(TestCase):
             assert_equal(ft.data, sample_data)
             assert_equal(ft.get_units(), 'sec')
         except:
-            print "Welp."
+            print "Welp."   
 
+    def test_get_data(self):
+        """Should test get_array, to_min, and to_sec"""
+        ft = frametime.FrameTime()
+        frames = np.array([[1, 2, 3, 4],
+                           [2, 3, 4, 5],
+                           [3, 4, 5, 6]])
+        min_frames = frames * 1/60.0
+        ft.data = frames
+        assert_equal(ft.get_array(), frames)
+        assert_almost_equal(ft.to_sec(), frames)
+        assert_almost_equal(ft.to_min(), min_frames)
+        ft.units = 'min'
+        ft.data = min_frames
+        assert_equal(ft.get_array(), min_frames)
+        assert_almost_equal(ft.to_sec(), frames)
+        assert_almost_equal(ft.to_min(), min_frames)
 
         
