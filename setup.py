@@ -5,8 +5,8 @@ from distutils.core import setup
 setup(
     name='nipet',
     version='0.2.0',
-    author='Cindee Madison'
-    author_email='cindeem at gmail dot com"
+    author='Cindee Madison',
+    author_email='cindeem at gmail dot com',
     packages=['nipet', 'nipet.test'],
     license='LICENSE.txt',
     description='Tools for Graphical Analysis of PET data',
