@@ -75,7 +75,7 @@ class FrameTime:
         curr = 0 #can replace with fnum in loop
         curr_start = 0
         curr_stop = 0
-        for fnum, frame in enumerate(self.data):
+        for frame in self.data:
             if frame[0] < 0:
                 raise ValueError("Negative frame number") #make Error classes
             if frame[0] < curr:
@@ -146,8 +146,17 @@ class FrameTime:
             print "Oops."
         self.units = units
 
+    #need to write tests for this still
     def to_csv(self, units = 'sec'):
         """Export timing info to csv file"""
+        #first way to do it
+        #np.saveas('frametime_out.csv', self.data, delimiter = ',')
+        #second way to do it
+        with open('frametime_out.csv', 'wb') as outfile
+        writer = csv.writer(outfile, delimiter = ',')
+        writer.writerow(['frame', 'start time', 'duration', 'stop time'])
+        for frame in self.data:
+            writer.writerow(frame)
 
     def to_excel(self, units = 'sec'):
         """Export timing info to excel file"""
