@@ -15,9 +15,17 @@ class TestFrametime(TestCase):
         
     def test_check_frame(self): 
         ft = frametime.FrameTime()
-        badframe = np.random.random(ft.col_num + 1)
+
+        badframe = np.array([2., 6., 27., 33., 1.])
         assert_equal(ft._check_frame(badframe), False)
-        frame = np.array([1., 6., 33., 27.])
+
+        badframe = np.random.random((4, 2))
+        assert_equal(ft._check_frame(badframe), False)
+
+        badframe = np.array([2., 6., 27., 34.])
+        assert_equal(ft._check_frame(badframe), False)
+
+        frame = np.array([1., 6., 27., 33.])
         assert_equal(ft._check_frame(frame), True)
 
     def test_generate_protocol(self):
@@ -37,12 +45,14 @@ class TestFrametime(TestCase):
         ft.data = frames
         #this works in manual testing
         assert_raises(ValueError, ft._validate_frames)
-        frames = np.random.random((5, 4))
-        ft.data = frames
-        assert_raises(ValueError, ft._validate_frames)
         frames = np.array([[1, 4, 5, 1], 
                            [2, 5, 8, 3],
                            [4, 8, 14, 6]])
+        ft.data = frames
+        assert_raises(ValueError, ft._validate_frames)
+        frames = np.array([[1, 0, 5, 5], 
+                           [2, 5, 3, 8],
+                           [4, 8, 6, 14]])
         ft.data = frames
         assert_equal(ft._validate_frames(), True)
 
@@ -70,6 +80,22 @@ class TestFrametime(TestCase):
             assert_equal(ft.get_units(), 'sec')
         except:
             print "Welp."   
+
+    def test_from_excel(self):
+        infile = 'data/sample_frames.xls'
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 15., 30.],
+                                [3., 30., 15., 45.],
+                                [4., 45., 15., 60.],
+                                [5., 60., 30., 90.]])
+        try:
+            ft = frametime.FrameTime()
+            ft.from_xls(infile)
+            assert_equal(ft.data, sample_data)
+            assert_equal(ft.get_units(), 'sec')
+        except:
+            print "Welp."   
+
 
     def test_get_data(self):
         """Test get_array, to_min, and to_sec"""

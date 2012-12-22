@@ -43,14 +43,25 @@ class FrameTime:
         to_delete = self.data[frame_num] 
         self.data = np.delete(self.data, frame_num, 0) 
         return to_delete
-    def _check_frame(self, frame):
+
+    def _check_frame(self, frame, eps = 1e-4):
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
-        return frame.shape[0] == self.col_num \
-                and True if len(frame.shape) == 1 else frame.shape[1] == 1 \
-                and frame[2] == frame[3] - frame[1] 
+        print frame
+        if frame.shape[0] != self.col_num:
+            print "Bad number of columns"
+            return False
+        elif not (len(frame.shape) == 1 or frame.shape[1] == 1): 
+            print "Extra rows"
+            return False
+        elif abs(frame[2] - (frame[3] - frame[1])) > eps:
+            print "Frame entries unaligned"
+            print frame
+            return False
+        else:
+            return True
 
-    def _validate_frames(self):
+    def _validate_frames(self, eps = 1e-4):
         """ 
         Possible cases:
             all frames in order 
@@ -62,7 +73,8 @@ class FrameTime:
             Does timing have to overlap exactly?
         """
         curr = 0 #can replace with fnum in loop
-        curr_time = 0
+        curr_start = 0
+        curr_stop = 0
         for fnum, frame in enumerate(self.data):
             if frame[0] < 0:
                 raise ValueError("Negative frame number") #make Error classes
@@ -71,9 +83,14 @@ class FrameTime:
             if frame[0] != curr + 1:
                 missing_frames = True
             curr = frame[0]
-            if frame[1] < curr_time:
+            if frame[1] < curr_stop:
                 raise ValueError("Overlapping frames") 
-            curr_time = frame[1]
+            if abs(curr_stop - frame[1]) > eps:
+                print curr_stop
+                print frame
+                raise ValueError("Misaligned frames")
+            curr_start = frame[1]
+            curr_stop = frame[3]
             if not self._check_frame(frame):
                 raise ValueError("Bad frame")
         if missing_frames:
@@ -124,7 +141,7 @@ class FrameTime:
         """Pulls timing info from excel file and stores in an array"""
         try:
             df = ExcelFile(excel_file).parse('Sheet1') #dataframe
-            df.to_records()
+            self.data = df.to_records()
         except IOError:
             print "Oops."
         self.units = units
@@ -140,7 +157,7 @@ class FrameTime:
         if self.units == 'min':
             return self.data
         elif self.units == 'sec':
-            return 1/60.0 * self.data
+            return self.data * 1/60.0
 
     def to_sec(self):
         """Returns the frametime array in seconds."""
