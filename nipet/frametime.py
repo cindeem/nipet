@@ -1,4 +1,5 @@
 import numpy as np
+import csv
 from pandas import ExcelFile, read_csv
 
 def _min_to_sec(minutes):
@@ -134,29 +135,34 @@ class FrameTime:
                                     skiprows = head)
             self.units = units
         except:
-            raise IOError("Error reading file. \
-                           Check if file exists or if file is blank")
+            raise IOError("Error reading file " + csv_filename + \
+                           " Check if file exists or if file is blank")
 
     def from_excel(self, excel_file, units = 'sec'):
         """Pulls timing info from excel file and stores in an array"""
         try:
             df = ExcelFile(excel_file).parse('Sheet1') #dataframe
-            self.data = df.to_records()
+            rec = df.to_records()
+            #can be converted to numpy array
+            #by using rec.astype all the same type
+            #then calling .view(that type) with the result 
+            #supposedly this is faster than the below method
+            dat_arr = np.array(rec.tolist()) #pirate
+            #get rid of the 'index' column from pandas
+            self.data = dat_arr[0:dat_arr.shape[0], 1:self.col_num + 1]
         except IOError:
             print "Oops."
         self.units = units
 
-    #need to write tests for this still
-    def to_csv(self, units = 'sec'):
+    def to_csv(self, outf, units = 'sec'):
         """Export timing info to csv file"""
-        #first way to do it
+        #alternative
         #np.saveas('frametime_out.csv', self.data, delimiter = ',')
-        #second way to do it
-        with open('frametime_out.csv', 'wb') as outfile
-        writer = csv.writer(outfile, delimiter = ',')
-        writer.writerow(['frame', 'start time', 'duration', 'stop time'])
-        for frame in self.data:
-            writer.writerow(frame)
+        with open(outf, 'wb') as outfile:
+            writer = csv.writer(outfile, delimiter = ',')
+            writer.writerow(['frame', 'start time', 'duration', 'stop time'])
+            for frame in self.data:
+                writer.writerow(frame)
 
     def to_excel(self, units = 'sec'):
         """Export timing info to excel file"""
