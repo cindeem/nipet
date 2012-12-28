@@ -67,6 +67,18 @@ class TestFrametime(TestCase):
         assert_equal(ft.data, np.array([[1, 2, 3, 4],
                                         [3, 4, 5, 6]]))
 
+    def test_from_ecat(self):
+        infile = join(split(abspath(__file__))[0], 'data/sample_frames.ecat')
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 15., 30.],
+                                [3., 30., 15., 45.],
+                                [4., 45., 15., 60.],
+                                [5., 60., 30., 90.]])
+        ft = frametime.FrameTime()
+        ft.from_ecat(infile)
+        assert_equal(ft.data, sample_data)
+        assert_equal(ft.get_units(), 'sec')
+
     def test_from_csv(self):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.csv')
         sample_data = np.array([[1., 0., 15., 15.],
