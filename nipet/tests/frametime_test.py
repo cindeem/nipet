@@ -105,6 +105,7 @@ class TestFrametime(TestCase):
 
     def test_to_csv(self):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.csv')
+        outfile2 = join(split(abspath(__file__))[0], 'data/sample_out-1.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
                                 [3., 30., 15., 45.],
@@ -112,15 +113,21 @@ class TestFrametime(TestCase):
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
         ft.data = sample_data
-        ft2 =frametime.FrameTime() 
+        ft2 = frametime.FrameTime() 
         ft.to_csv(outfile)
         ft2.from_csv(outfile)
         assert_equal(ft2.data, sample_data)
+        ft.to_csv(outfile)
+        ft2.from_csv(outfile2)
+        assert_equal(ft2.data, sample_data)
         if exists(outfile):
             os.remove(outfile)
+        if exists(outfile2):
+            os.remove(outfile2)
 
     def test_to_excel(self):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.xls')
+        outfile2 = join(split(abspath(__file__))[0], 'data/sample_out-1.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
                                 [3., 30., 15., 45.],
@@ -132,8 +139,13 @@ class TestFrametime(TestCase):
         ft.to_excel(outfile)
         ft2.from_excel(outfile)
         assert_equal(ft2.data, sample_data)
+        ft.to_excel(outfile)
+        ft2.from_excel(outfile2)
+        assert_equal(ft2.data, sample_data)
         if exists(outfile):
             os.remove(outfile)
+        if exists(outfile2):
+            os.remove(outfile2)
 
     def test_get_data(self):
         """Test get_array, to_min, and to_sec"""
