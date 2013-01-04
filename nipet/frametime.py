@@ -181,6 +181,7 @@ class FrameTime:
 
     def to_csv(self, outfile, units = 'sec'):
         """Export timing info to csv file
+        Returns location of exported file.
         Parameters
         ----------
             outfile:
@@ -202,16 +203,17 @@ class FrameTime:
                 print data
                 for frame in data:
                     writer.writerow(frame)
+                return outfile
         else:
             name, ext = splitext(outfile)
             i = 0
             while exists(name + '-%d'%i + ext):
                 i = i + 1
-            self.to_csv(name + '-%d'%i + ext, units)
+            return self.to_csv(name + '-%d'%i + ext, units)
 
     def to_excel(self, outfile, units = 'sec'):
         """Export timing info to excel file.
-        If 
+        Returns location of exported file.
 
         Parameters
         ----------
@@ -226,12 +228,13 @@ class FrameTime:
         if not exists(outfile):
             df = DataFrame(self.get_data(units), columns = ['frame', 'start time', 'duration', 'stop time'])
             df.to_excel(outfile, sheet_name = 'Sheet1', index = False)
+            return outfile
         else:
             name, ext = splitext(outfile)
             i = 1
             while exists(name + ' (%d)'%i + ext):
                 i = i + 1
-            self.to_excel(name + '-%d'%i + ext, units)
+            return self.to_excel(name + '-%d'%i + ext, units)
 
     def to_min(self):
         """Returns the frametime array in minutes."""
