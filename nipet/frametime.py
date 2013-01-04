@@ -33,7 +33,7 @@ class FrameTime:
         self.units = None 
         self.data = None
 
-    def set_units(self, units)
+    def set_units(self, units):
         """
         Set self.units to units; units is one of ['min', sec']
         """ 
@@ -192,13 +192,14 @@ class FrameTime:
         #alternative
         #np.saveas('frametime_out.csv', self.data, delimiter = ',')
         #alternative #2: use pandas.DataFrame.to_csv
-        if not self.units:
+        if self.units == None:
             self.units = units
         if not exists(outfile):
             with open(outfile, 'wb') as out_file:
                 writer = csv.writer(out_file, delimiter = ',')
                 writer.writerow(['frame', 'start time', 'duration', 'stop time'])
-                data = self.get_data(units):
+                data = self.get_data(units)
+                print data
                 for frame in data:
                     writer.writerow(frame)
         else:
