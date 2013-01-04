@@ -30,8 +30,14 @@ class FrameTime:
             number of columns
         """
         self.col_num = 4
-        self.units = None
+        self.units = None 
         self.data = None
+
+    def set_units(self, units)
+        """
+        Set self.units to units; units is one of ['min', sec']
+        """ 
+        self.units = units
 
     def isempty(self):
         if self.data:
@@ -124,7 +130,14 @@ class FrameTime:
         pass
 
     def from_csv(self, csv_filename, units = 'sec'): 
-        """Pulls timing info from csv and stores in an array"""
+        """Pulls timing info from csv and stores in an array.
+        Parameters
+        ---------
+            csv_filename:
+                the name of the csv file e.g. 'filename.csv'
+            units:
+                the units the imported data is in
+        """
         try:
             with open(csv_filename) as infile:
                 header = infile.readline()
@@ -140,49 +153,80 @@ class FrameTime:
                            " Check if file exists or if file is blank")
 
     def from_excel(self, excel_file, units = 'sec'):
-        """Pulls timing info from excel file and stores in an array"""
+        """Pulls timing info from excel file and stores in an array.
+        Parameters
+        ----------
+            excel_file:
+                the name of the file to import from. 
+                e.g. file.xls
+            units:
+                the units the imported data is in
+        """
         try:
             df = ExcelFile(excel_file).parse('Sheet1') #dataframe
             rec = df.to_records()
+
             #can be converted to numpy array
             #by using rec.astype all the same type
             #then calling .view(that type) with the result 
             #supposedly this is faster than the below method
+
             dat_arr = np.array(rec.tolist()) #pirate
+
             #get rid of the 'index' column from pandas
             self.data = dat_arr[0:dat_arr.shape[0], 1:self.col_num + 1]
         except IOError:
             print "Oops."
         self.units = units
 
-    def to_csv(self, outf, units = 'sec'):
-        """Export timing info to csv file"""
+    def to_csv(self, outfile, units = 'sec'):
+        """Export timing info to csv file
+        Parameters
+        ----------
+            outfile:
+                the name of the file to export from. 
+                e.g. file.csv
+            units:
+                the units to export the data in; one of ['min', 'sec']
+        """
         #alternative
         #np.saveas('frametime_out.csv', self.data, delimiter = ',')
-        if not exists(outf):
-            with open(outf, 'wb') as outfile:
-                writer = csv.writer(outfile, delimiter = ',')
-                writer.writerow(['frame', 'start time', 'duration', 'stop time'])
-                for frame in self.data:
-                    writer.writerow(frame)
-        else:
-            name, ext = splitext(outf)
-            i = 0
-            while exists(name + ' (%d)'%i + ext):
-                i = i + 1
-            self.to_csv(self, name + ' (%d)%i' + ext, units)
-
-    def to_excel(self, outfile, units = 'sec'):
-        """Export timing info to excel file"""
+        #alternative #2: use pandas.DataFrame.to_csv
         if not exists(outfile):
-            df = DataFrame(self.data, columns = ['frame', 'start time', 'duration', 'stop time'])
-            df.to_excel(outfile, sheet_name = 'Sheet1', index = False)
+            with open(outfile, 'wb') as out_file:
+                writer = csv.writer(out_file, delimiter = ',')
+                writer.writerow(['frame', 'start time', 'duration', 'stop time'])
+                data = self.get_data(units):
+                for frame in data:
+                    writer.writerow(frame)
         else:
             name, ext = splitext(outfile)
             i = 0
+            while exists(name + '-%d'%i + ext):
+                i = i + 1
+            self.to_csv(name + '-%d'%i + ext, units)
+
+    def to_excel(self, outfile, units = 'sec'):
+        """Export timing info to excel file.
+        If 
+
+        Parameters
+        ----------
+            excel_file:
+                the name of the file to export from. 
+                e.g. file.xls
+            units:
+                the units to export the data in; one of ['min', 'sec']
+        """
+        if not exists(outfile):
+            df = DataFrame(self.get_data(units), columns = ['frame', 'start time', 'duration', 'stop time'])
+            df.to_excel(outfile, sheet_name = 'Sheet1', index = False)
+        else:
+            name, ext = splitext(outfile)
+            i = 1
             while exists(name + ' (%d)'%i + ext):
                 i = i + 1
-            self.to_excel(self, name + ' (%d)%i' + ext, units)
+            self.to_excel(name + '-%d'%i + ext, units)
 
     def to_min(self):
         """Returns the frametime array in minutes."""
@@ -198,7 +242,7 @@ class FrameTime:
         elif self.units == 'min':
             return 60.0 * self.data
 
-    def get_array(self, units = 'sec'):
+    def get_data(self, units = 'sec'):
         """Return timing info as numpy array"""
         if units == 'min':
             return self.to_min()

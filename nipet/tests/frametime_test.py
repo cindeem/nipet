@@ -13,9 +13,13 @@ class TestFrametime(TestCase):
     def test_class(self):
         ft = frametime.FrameTime()
         assert_equal(ft.isempty(), True)
+        assert_equal(ft.units, None)
+        ft.set_units('sec')
+        assert_equal(ft.units, 'sec')
         
     def test_check_frame(self): 
         ft = frametime.FrameTime()
+        ft.set_units('sec')
 
         badframe = np.array([2., 6., 27., 33., 1.])
         assert_equal(ft._check_frame(badframe), False)
@@ -31,6 +35,8 @@ class TestFrametime(TestCase):
 
     def test_generate_protocol(self):
         ft = frametime.FrameTime()
+        ft.set_units('sec')
+
         protocol = ft.generate_empty_protocol(4)
         assert_equal(protocol.shape, (5, 4))
         header = np.array(['frame number', 'start time', 'duration', 'stop time'], dtype = 'S12')
@@ -43,6 +49,7 @@ class TestFrametime(TestCase):
     def test_validate_frames(self):
         frames = np.random.random((5, 3))
         ft = frametime.FrameTime()
+        ft.set_units('sec')
         ft.data = frames
         #this works in manual testing
         assert_raises(ValueError, ft._validate_frames)
@@ -59,6 +66,7 @@ class TestFrametime(TestCase):
 
     def test_delete_frame(self):
         ft = frametime.FrameTime()
+        ft.set_units('sec')
         frames = np.array([[1, 2, 3, 4],
                            [2, 3, 4, 5],
                            [3, 4, 5, 6]])
@@ -81,6 +89,7 @@ class TestFrametime(TestCase):
 
     def test_from_csv(self):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.csv')
+        ft.set_units('sec')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
                                 [3., 30., 15., 45.],
@@ -93,6 +102,7 @@ class TestFrametime(TestCase):
 
     def test_from_excel(self):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.xls')
+        ft.set_units('sec')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
                                 [3., 30., 15., 45.],
@@ -112,8 +122,10 @@ class TestFrametime(TestCase):
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
+        ft.set_units('sec')
         ft.data = sample_data
         ft2 = frametime.FrameTime() 
+        ft2.set_units('sec')
         ft.to_csv(outfile)
         ft2.from_csv(outfile)
         assert_equal(ft2.data, sample_data)
@@ -134,8 +146,10 @@ class TestFrametime(TestCase):
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
+        ft.set_units('sec')
         ft.data = sample_data
         ft2 =frametime.FrameTime() 
+        ft2.set_units('sec')
         ft.to_excel(outfile)
         ft2.from_excel(outfile)
         assert_equal(ft2.data, sample_data)
@@ -148,7 +162,7 @@ class TestFrametime(TestCase):
             os.remove(outfile2)
 
     def test_get_data(self):
-        """Test get_array, to_min, and to_sec"""
+        """Test get_data, to_min, and to_sec"""
         ft = frametime.FrameTime()
         frames = np.array([[1, 2, 3, 4],
                            [2, 3, 4, 5],
@@ -157,20 +171,20 @@ class TestFrametime(TestCase):
         empty = np.array(None, dtype=object)
         ft.data = frames
 
-        assert_equal(ft.get_array(), empty)
+        assert_equal(ft.get_data(), empty)
         assert_equal(ft.to_sec(), empty)
         assert_equal(ft.to_min(), empty)
 
-        ft.units = 'sec'
-        assert_equal(ft.get_array(), frames)
-        assert_almost_equal(ft.get_array('min'), min_frames)
+        ft.set_units('sec')
+        assert_equal(ft.get_data(), frames)
+        assert_almost_equal(ft.get_data('min'), min_frames)
         assert_almost_equal(ft.to_sec(), frames)
         assert_almost_equal(ft.to_min(), min_frames)
 
         ft.data = min_frames
-        ft.units = 'min'
-        assert_equal(ft.get_array(), frames)
-        assert_equal(ft.get_array('min'), min_frames)
+        ft.set_units('min')
+        assert_equal(ft.get_data(), frames)
+        assert_equal(ft.get_data('min'), min_frames)
         assert_almost_equal(ft.to_sec(), frames)
         assert_almost_equal(ft.to_min(), min_frames)
 
