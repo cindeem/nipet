@@ -1,6 +1,7 @@
 import numpy as np
 import csv
-from pandas import ExcelFile, read_csv
+from pandas import ExcelFile, read_csv, DataFrame
+from os.path import exists, splitext
 
 def _min_to_sec(minutes):
     """converts minutes to seconds, 
@@ -158,14 +159,30 @@ class FrameTime:
         """Export timing info to csv file"""
         #alternative
         #np.saveas('frametime_out.csv', self.data, delimiter = ',')
-        with open(outf, 'wb') as outfile:
-            writer = csv.writer(outfile, delimiter = ',')
-            writer.writerow(['frame', 'start time', 'duration', 'stop time'])
-            for frame in self.data:
-                writer.writerow(frame)
+        if not exists(outf):
+            with open(outf, 'wb') as outfile:
+                writer = csv.writer(outfile, delimiter = ',')
+                writer.writerow(['frame', 'start time', 'duration', 'stop time'])
+                for frame in self.data:
+                    writer.writerow(frame)
+        else:
+            name, ext = splitext(outf)
+            i = 0
+            while exists(name + ' (%d)'%i + ext):
+                i = i + 1
+            self.to_csv(self, name + ' (%d)%i' + ext, units)
 
-    def to_excel(self, units = 'sec'):
+    def to_excel(self, outfile, units = 'sec'):
         """Export timing info to excel file"""
+        if not exists(outfile):
+            df = DataFrame(self.data, columns = ['frame', 'start time', 'duration', 'stop time'])
+            df.to_excel(outfile, sheet_name = 'Sheet1', index = False)
+        else:
+            name, ext = splitext(outfile)
+            i = 0
+            while exists(name + ' (%d)'%i + ext):
+                i = i + 1
+            self.to_excel(self, name + ' (%d)%i' + ext, units)
 
     def to_min(self):
         """Returns the frametime array in minutes."""
