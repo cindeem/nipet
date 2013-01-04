@@ -192,6 +192,8 @@ class FrameTime:
         #alternative
         #np.saveas('frametime_out.csv', self.data, delimiter = ',')
         #alternative #2: use pandas.DataFrame.to_csv
+        if not self.units:
+            self.units = units
         if not exists(outfile):
             with open(outfile, 'wb') as out_file:
                 writer = csv.writer(out_file, delimiter = ',')
@@ -218,6 +220,8 @@ class FrameTime:
             units:
                 the units to export the data in; one of ['min', 'sec']
         """
+        if not self.units:
+            self.units = units
         if not exists(outfile):
             df = DataFrame(self.get_data(units), columns = ['frame', 'start time', 'duration', 'stop time'])
             df.to_excel(outfile, sheet_name = 'Sheet1', index = False)
