@@ -4,7 +4,7 @@ from numpy.testing import (assert_raises, assert_equal, assert_almost_equal)
 from os.path import exists, join, split, abspath
 import os
 from .. import frametime
-from ..frametime import DataError
+from ..frametime import DataError, FrameError
 
 def file_exists(filename):
     return exists(filename) 
