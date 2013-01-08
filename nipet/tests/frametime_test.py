@@ -4,6 +4,7 @@ from numpy.testing import (assert_raises, assert_equal, assert_almost_equal)
 from os.path import exists, join, split, abspath
 import os
 from .. import frametime
+from ..frametime import DataError
 
 def file_exists(filename):
     return exists(filename) 
@@ -119,6 +120,7 @@ class TestFrametime(TestCase):
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
+        assert_raises(DataError, ft.to_csv, outfile)
         ft.set_units('sec')
         ft.data = sample_data
         ft2 = frametime.FrameTime() 
@@ -126,8 +128,8 @@ class TestFrametime(TestCase):
         f1 = ft.to_csv(outfile, 'sec')
         ft2.from_csv(f1, 'sec')
         assert_equal(ft2.data, sample_data)
-        if exists(outfile):
-            os.remove(outfile)
+        if exists(f1):
+            os.remove(f1)
 
     def test_to_excel(self):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.xls')
@@ -137,6 +139,7 @@ class TestFrametime(TestCase):
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
+        assert_raises(DataError, ft.to_excel, outfile)
         ft.set_units('sec')
         ft.data = sample_data
         ft2 = frametime.FrameTime() 
@@ -144,8 +147,8 @@ class TestFrametime(TestCase):
         f1 = ft.to_excel(outfile, 'sec')
         ft2.from_excel(f1, 'sec')
         assert_equal(ft2.data, sample_data)
-        if exists(outfile):
-            os.remove(outfile)
+        if exists(f1):
+            os.remove(f1)
 
     def test_get_data(self):
         """Test get_data, to_min, and to_sec"""
