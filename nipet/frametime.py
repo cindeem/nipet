@@ -19,8 +19,19 @@ def timestamp(filename):
     return name + '-' + str(datetime.today()).replace(' ', '-') \
                                              .split('.')[0] + ext
 
+class FrameError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return repr(self.msg)
+
 class DataError(Exception):
-    pass
+    def __init__(self, msg = '', data = None, source = ''):
+        self.msg = msg
+        self.data = data
+        self.source = source
+    def __str__(self):
+        return repr(self.msg) + ' from ' + repr(self.source) + ': ' + repr(self.data)
 
 class FrameTime:
     """
@@ -91,24 +102,25 @@ class FrameTime:
         curr = 0 #can replace with fnum in loop
         curr_start = 0
         curr_stop = 0
+        missing_frames = False
         for frame in self.data:
             if frame[0] < 0:
-                raise ValueError("Negative frame number") #make Error classes
+                raise FrameError("Negative frame number") #make Error classes
             if frame[0] < curr:
-                raise ValueError("Frames out of order") 
+                raise FrameError("Frames out of order") 
             if frame[0] != curr + 1:
                 missing_frames = True
             curr = frame[0]
             if frame[1] < curr_stop:
-                raise ValueError("Overlapping frames") 
+                raise FrameError("Overlapping frames") 
             if abs(curr_stop - frame[1]) > eps:
                 print curr_stop
                 print frame
-                raise ValueError("Misaligned frames")
+                raise FrameError("Misaligned frames")
             curr_start = frame[1]
             curr_stop = frame[3]
             if not self._check_frame(frame):
-                raise ValueError("Bad frame")
+                raise FrameError("Bad frame")
         if missing_frames:
             print "Missing frames"
         return True
@@ -135,12 +147,21 @@ class FrameTime:
     def from_array(self, array, units):
         self.data = array
         self.units = units
+        try:
+            self._validate_frames()
+        except FrameError:
+            raise DataError('Bad data', self.data, 'array')
 
     def from_ecat(self, ecat_file, units):
         """Pulls timing info from ecat and stores in an array"""
+        #do stuff    
         self.units = units
+        try:
+            self._validate_frames()
+        except FrameError:
+            raise DataError('Bad data', self.data, ecat_file)
 
-    def from_csv(self, csv_filename, units): 
+    def from_csv(self, csv_file, units): 
         """Pulls timing info from csv and stores in an array.
         Parameters
         ---------
@@ -150,18 +171,22 @@ class FrameTime:
                 the units the imported data is in
         """
         try:
-            with open(csv_filename) as infile:
+            with open(csv_file) as infile:
                 header = infile.readline()
                 if header[0].isdigit():
                     head = 0
                 else:
                     head = 1
-            self.data = np.loadtxt(csv_filename, delimiter = ',', 
+            self.data = np.loadtxt(csv_file, delimiter = ',', 
                                     skiprows = head)
             self.units = units
         except:
-            raise IOError("Error reading file " + csv_filename + \
+            raise IOError("Error reading file " + csv_file + \
                            " Check if file exists or if file is blank")
+        try:
+            self._validate_frames()
+        except FrameError:
+            raise DataError('Bad data', self.data, csv_file)
 
     def from_excel(self, excel_file, units):
         """Pulls timing info from excel file and stores in an array.
@@ -189,6 +214,10 @@ class FrameTime:
             self.units = units
         except IOError:
             print "Oops."
+        try:
+            self._validate_frames()
+        except FrameError:
+            raise DataError('Bad data', self.data, excel_file)
 
     def to_csv(self, outfile, units = ''):
         """Export timing info to csv file

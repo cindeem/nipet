@@ -53,12 +53,12 @@ class TestFrametime(TestCase):
         ft.set_units('sec')
         ft.data = frames
         #this works in manual testing
-        assert_raises(ValueError, ft._validate_frames)
+        assert_raises(FrameError, ft._validate_frames)
         frames = np.array([[1, 4, 5, 1], 
                            [2, 5, 8, 3],
                            [4, 8, 14, 6]])
         ft.data = frames
-        assert_raises(ValueError, ft._validate_frames)
+        assert_raises(FrameError, ft._validate_frames)
         frames = np.array([[1, 0, 5, 5], 
                            [2, 5, 3, 8],
                            [4, 8, 6, 14]])
