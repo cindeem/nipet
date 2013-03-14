@@ -16,7 +16,7 @@ def _sec_to_min(seconds):
 
 def timestamp(filename):
     name, ext = splitext(filename)
-    return name + '-' + str(datetime.today()).replace(' ', '-') \
+    return name + '_' + str(datetime.today()).replace(' ', '-') \
                                              .split('.')[0] + ext
 
 class FrameError(Exception):
@@ -102,18 +102,19 @@ class FrameTime:
         curr = 0 #can replace with fnum in loop
         curr_start = 0
         curr_stop = 0
-        missing_frames = False
+        missing_frames = []
         for frame in self.data:
             if frame[0] < 0:
                 raise FrameError("Negative frame number") #make Error classes
             if frame[0] < curr:
                 raise FrameError("Frames out of order") 
             if frame[0] != curr + 1:
-                missing_frames = True
+                for i in range(curr + 1, int(frame[0])): #alternative?
+                    missing_frames.append(i) 
             curr = frame[0]
             if frame[1] < curr_stop:
                 raise FrameError("Overlapping frames") 
-            if abs(curr_stop - frame[1]) > eps:
+            if frame[0] - 1 not in missing_frames and abs(curr_stop - frame[1]) > eps:
                 print curr_stop
                 print frame
                 raise FrameError("Misaligned frames")
@@ -122,7 +123,7 @@ class FrameTime:
             if not self._check_frame(frame):
                 raise FrameError("Bad frame")
         if missing_frames:
-            print "Missing frames"
+            print 'Missing frames: ' + repr(missing_frames)
         return True
 
     def get_units(self):
