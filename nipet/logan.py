@@ -8,7 +8,7 @@ import numpy as np
 import nibabel as ni
 import scipy.integrate
 import matplotlib.pyplot as plt
-
+import frametimes
  
 def get_ref(refroi, dat):
     """given region of interest, extracts mean for each frame
@@ -25,33 +25,6 @@ def get_ref(refroi, dat):
                              refdat.T > 0)
         means[val] = slice[ind].mean()
     return means
-
-
-def midframes_from_file(infile, units='sec'):
-    """infile is a frametimes file each row has
-    [frame number, start dur, stop] in seconds
-
-    Returns
-    -------
-    midframes: vector of start-dur/2
-    starttimes: vector of durations
-    """
-    ft = np.loadtxt(infile, delimiter = ',',
-                    usecols = (1,2,3), skiprows = 1)
-    midframes = ft[:,0] + ft[:,1] / 2
-    return midframes, ft[:,1]
-
-def frametimes_from_file(infile):
-    """infile is a frametimes file each row has
-    [frame number, start dur, stop] in seconds
-
-    Returns
-    -------
-    ft: array [start, duration, stop] in seconds for each frame
-    """
-    ft = np.loadtxt(infile, delimiter = ',',
-                    usecols = (1,2,3), skiprows = 1)
-    return ft
 
 def is_iterable(input):
     """checks if object can be iterated"""
@@ -151,7 +124,9 @@ def save_data2nii(data, reference_img, filename='generic_file',outdir='.'):
     img = ni.load(reference_img)
     data = np.reshape(data, img.get_shape())
     out_img = ni.Nifti1Image(data, img.get_affine())
-    outfile = os.path.join(outdir, '%s_%s.nii.gz'%(filename,time.strftime('%Y-%m-%d-%H-%M')))
+    outfile = os.path.join(outdir, 
+                           '%s_%s.nii.gz'%(filename,
+                                           time.strftime('%Y-%m-%d-%H-%M')))
     out_img.to_filename(outfile)
     return outfile
     
@@ -174,11 +149,7 @@ def calc_xy(ref, masked_dat,midtimes, k2ref=.15):
     int_ref = scipy.integrate.cumtrapz(big_ref.T,big_durs.T, axis=0)
     y = (int_dat.T)  / masked_dat[:,1:]# 33, nvox in mask
     x = (int_ref.T / masked_dat[:,1:]) + ( 1 / k2ref) *(big_ref[:,1:] / masked_dat[:,1:]) 
-    return x,y
-
-
-
-    
+    return x,y    
 
 def get_lstsq(x,y):
     """solves best fitting line using np.linalg.lstsq
@@ -192,12 +163,11 @@ def get_lstsq(x,y):
     residues = results[1]
     return ki,vd,residues
 
-def calc_ki(x,y, timing_file, range=(35,90)):
+def calc_ki(x,y, timing, range=(35,90)):
     """ calculates ki of data given reference, timing file,
     and range of steady state data (in minutes)"""
-    ft = frametimes_from_file(timing_file)
-    start_end = np.logical_and(ft[1:,0] / 60. >= range[0],
-                               ft[1:,2] / 60. <= range[1])
+    start_end = np.logical_and(timing[1:,0] / 60. >= range[0],
+                               timing[1:,2] / 60. <= range[1])
     if len(x.shape) == len(y.shape) == 1:
         ## regional ki
         allki, allvd, residues = get_lstsq(x[start_end],y[start_end])
@@ -219,14 +189,14 @@ def results_to_array(results, mask):
     dat[mask] = results
     return dat
 
-def loganplot(ref,region, timingf, outdir):
+def loganplot(ref,region, timing, outdir):
     """given (ref), and  (region)
     calculate best fit line"""
-    midtimes, durs = midframes_from_file(timingf)
+    midtimes = timing.get_midtimes()
     refx, refy = region_xy(ref, ref, midtimes)
     rx,ry = region_xy(ref, region, midtimes)
-    slope, intercept, err = calc_ki(rx,ry, timingf)
-    refslope, refintercept, referr = calc_ki(refx, refy, timingf)
+    slope, intercept, err = calc_ki(rx,ry, timing)
+    refslope, refintercept, referr = calc_ki(refx, refy, timing)
     fity = rx * slope + intercept
     fitrefy = refx * refslope + refintercept
     fig = plt.figure() 
@@ -304,15 +274,16 @@ if __name__ == '__main__':
     refroifile = '%s/rgrey_cerebellum.nii.gz'%root
     mask = '%s/rbrainmask.nii.gz'%root
     timing_file = '%s/frametimes.csv'%root
-    aparc = '%s/rB09-210_v1_aparc_aseg.nii.gz'%root
-    midtimes, durs = midframes_from_file(timing_file)
+    aparc = '%s/rB09-210_v1_aparc_aseg.nii.gz'%rooti
+    pibtimes = frametimes.FrameTime().from_csv(timing_file, units = 'sec')
+    midtimes = pibtimes.get_midtimes()
     data4d = get_data_nibabel(frames)
     
     ref = get_ref(refroifile, data4d)
     ref_fig = save_inputplot(ref, (midtimes + durs/2.), root)
     masked_data, mask_roi = mask_data(mask, data4d)
     x,y  = calc_xy(ref,masked_data, midtimes)
-    allki,allvd, residuals = calc_ki(x, y, timing_file, range=range)
+    allki,allvd, residuals = calc_ki(x, y, pibtimes, range=range)
     dvr = results_to_array(allki, mask_roi)
     # logan plot
     labels = [1003,
