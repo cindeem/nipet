@@ -28,6 +28,12 @@ def correct_data(data):
         data[:, [2, 3]] = data[:, [3, 2]]
     return data
       
+def guess_units(data):
+    data = correct_data
+    n_rows, n_col = data.shape
+    if data[n_rows, 3] >= 1000:
+        return 'min'
+    return 'sec'
 
 class FrameError(Exception):
     def __init__(self, msg):
