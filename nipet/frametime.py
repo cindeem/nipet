@@ -170,17 +170,20 @@ class FrameTime:
         except FrameError:
             raise DataError('Bad data', self.data, 'array')
 
-    def from_ecat(self, ecat_file, units):
+    def from_ecat(self, ecat_file, units=None):
         """Pulls timing info from ecat and stores in an array"""
         #do stuff    
         self.data = correct_data(self.data)
-        self.units = units
+        if not units:
+            self.units = guess_units(self.data)
+        else:
+            self.units = units
         try:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, ecat_file)
 
-    def from_csv(self, csv_file, units): 
+    def from_csv(self, csv_file, units=None): 
         """Pulls timing info from csv and stores in an array.
         Parameters
         ---------
@@ -200,7 +203,10 @@ class FrameTime:
                                     skiprows = head)
             self.data = correct_data(self.data)
             self.data = self.data[:, 0:4]
-            self.units = units
+            if not units:
+                self.units = guess_units(self.data)
+            else:
+                self.units = units
         except:
             raise IOError("Error reading file " + csv_file + \
                            " Check if file exists or if file is blank")
@@ -209,7 +215,7 @@ class FrameTime:
         except FrameError:
             raise DataError('Bad data', self.data, csv_file)
 
-    def from_excel(self, excel_file, units):
+    def from_excel(self, excel_file, units=None):
         """Pulls timing info from excel file and stores in an array.
         Parameters
         ----------
@@ -233,7 +239,10 @@ class FrameTime:
             #get rid of the 'index' column from pandas
             self.data = dat_arr[0:dat_arr.shape[0], 1:self.col_num + 1]
             self.data = correct_data(self.data)
-            self.units = units
+            if not units:
+                self.units = guess_units(self.data)
+            else:
+                self.units = units
         except IOError:
             print "Oops."
         try:
@@ -241,7 +250,7 @@ class FrameTime:
         except FrameError:
             raise DataError('Bad data', self.data, excel_file)
 
-    def to_csv(self, outfile, units = ''):
+    def to_csv(self, outfile, units = None):
         """Export timing info to csv file
         Returns location of exported file.
         Automatically timestamps filename in format:
@@ -259,7 +268,7 @@ class FrameTime:
         #alternative #2: use pandas.DataFrame.to_csv
         if self.data == None or self.units == None:
             raise DataError('Cannot export; no data!')
-        if units == '':
+        if not units:
             units = self.units
         filename = timestamp(outfile)
         with open(filename, 'wb') as out_file:
@@ -271,7 +280,7 @@ class FrameTime:
                 writer.writerow(frame)
         return filename
 
-    def to_excel(self, outfile, units = ''):
+    def to_excel(self, outfile, units = None):
         """Export timing info to excel file.
         Returns location of exported file.
         Automatically timestamps filename in format:
@@ -287,7 +296,7 @@ class FrameTime:
         """
         if self.data == None or self.units == None:
             raise DataError('Cannot export; no data!')
-        if units == '':
+        if not units:
             units = self.units
         try:
             filename = timestamp(outfile)
@@ -318,3 +327,16 @@ class FrameTime:
         else:
             return self.to_sec()
 
+    def get_midtimes(self, units=None):
+        if not units:
+            units = self.units
+        n_rows, n_col = self.data.shape
+        midtimes = np.zeros((n_rows, 2))
+        for k, row in enumerate(self.data):
+            midtimes[k, 0] = row[0]
+            midtimes[k, 1] = (row[1] + row[3])/2.0 
+        if self.units == 'min' and units == 'sec':
+            return midtimes*60.0
+        elif self.units == 'sec' and units == 'min':
+            return midtimes/60.0
+        return midtimes

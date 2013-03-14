@@ -185,4 +185,18 @@ class TestFrametime(TestCase):
         assert_almost_equal(ft.to_sec(), frames)
         assert_almost_equal(ft.to_min(), min_frames)
 
-        
+    def test_get_midtimes(self):  
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 15., 30.],
+                                [3., 30., 15., 45.],
+                                [4., 45., 15., 60.],
+                                [5., 60., 30., 90.]])
+        ft = frametime.FrameTime()
+        ft.data = sample_data
+        midtimes = ft.get_midtimes()
+        expected = np.array([[1, 7.5],
+                             [2, 22.5],
+                             [3, 37.5], 
+                             [4, 52.5],
+                             [5, 75]])
+        assert_equal(midtimes, expected)
