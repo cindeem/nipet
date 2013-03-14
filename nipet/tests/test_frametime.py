@@ -18,6 +18,14 @@ class TestFrametime(TestCase):
         ft.set_units('sec')
         assert_equal(ft.units, 'sec')
         
+    def test_correct_data(self):
+        good = np.array([[1, 0, 15, 15],
+                         [2, 15, 15, 30]])
+        bad = np.array([[1, 0, 15, 15],
+                        [2, 15, 30, 15]])
+        assert_equal(good, frametime.correct_data(good)) 
+        assert_equal(good, frametime.correct_data(bad)) 
+
     def test_check_frame(self): 
         ft = frametime.FrameTime()
         ft.set_units('sec')

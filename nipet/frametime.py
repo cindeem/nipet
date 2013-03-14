@@ -19,6 +19,16 @@ def timestamp(filename):
     return name + '_' + str(datetime.today()).replace(' ', '-') \
                                              .split('.')[0] + ext
 
+def correct_data(data):
+    """
+    If frame duration and frame stop time are switched, switch them back into the correct order.
+    """
+    n_rows, n_col = data.shape
+    if data[n_rows - 1, 3] < data[n_rows - 1, 2]:
+        data[:, [2, 3]] = data[:, [3, 2]]
+    return data
+      
+
 class FrameError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -147,6 +157,7 @@ class FrameTime:
 
     def from_array(self, array, units):
         self.data = array
+        self.data = correct_data(self.data)
         self.units = units
         try:
             self._validate_frames()
@@ -156,6 +167,7 @@ class FrameTime:
     def from_ecat(self, ecat_file, units):
         """Pulls timing info from ecat and stores in an array"""
         #do stuff    
+        self.data = correct_data(self.data)
         self.units = units
         try:
             self._validate_frames()
@@ -180,6 +192,8 @@ class FrameTime:
                     head = 1
             self.data = np.loadtxt(csv_file, delimiter = ',', 
                                     skiprows = head)
+            self.data = correct_data(self.data)
+            self.data = self.data[:, 0:4]
             self.units = units
         except:
             raise IOError("Error reading file " + csv_file + \
@@ -212,6 +226,7 @@ class FrameTime:
 
             #get rid of the 'index' column from pandas
             self.data = dat_arr[0:dat_arr.shape[0], 1:self.col_num + 1]
+            self.data = correct_data(self.data)
             self.units = units
         except IOError:
             print "Oops."
