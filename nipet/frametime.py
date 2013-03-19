@@ -26,14 +26,15 @@ def correct_data(data):
     n_rows, n_col = data.shape
     if data[n_rows - 1, 3] < data[n_rows - 1, 2]:
         data[:, [2, 3]] = data[:, [3, 2]]
+    print 'hello world'
     return data
       
 def guess_units(data):
-    data = correct_data
-    n_rows, n_col = data.shape
-    if data[n_rows, 3] >= 1000:
-        return 'min'
-    return 'sec'
+    data = correct_data(data)
+    n_rows = data.shape[0]
+    if data[n_rows - 1, 3] >= 1000:
+        return 'sec'
+    return 'min'
 
 class FrameError(Exception):
     def __init__(self, msg):
@@ -127,7 +128,7 @@ class FrameTime:
             if frame[0] != curr + 1:
                 for i in range(curr + 1, int(frame[0])): #alternative?
                     missing_frames.append(i) 
-            curr = frame[0]
+            curr = int(frame[0])
             if frame[1] < curr_stop:
                 raise FrameError("Overlapping frames") 
             if frame[0] - 1 not in missing_frames and abs(curr_stop - frame[1]) > eps:
@@ -203,7 +204,9 @@ class FrameTime:
                                     skiprows = head)
             self.data = correct_data(self.data)
             self.data = self.data[:, 0:4]
+            print 'hi'
             if not units:
+                print 'bye'
                 self.units = guess_units(self.data)
             else:
                 self.units = units
