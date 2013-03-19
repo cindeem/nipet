@@ -17,6 +17,12 @@ class TestFrametime(TestCase):
         assert_equal(ft.units, None)
         ft.set_units('sec')
         assert_equal(ft.units, 'sec')
+
+    def test_guess_data(self):
+        sec = np.array([[1, 0, 3600, 3600],
+        assert_equal(frametime.guess_data(sec), 'sec')
+        min = np.array([[1, 0, 36, 36],
+        assert_equal(frametime.guess_data(min), 'min')
         
     def test_correct_data(self):
         good = np.array([[1, 0, 15, 15],
