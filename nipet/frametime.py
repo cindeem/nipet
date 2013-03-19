@@ -200,8 +200,12 @@ class FrameTime:
                     head = 0
                 else:
                     head = 1
-            self.data = np.loadtxt(csv_file, delimiter = ',', 
-                                    skiprows = head)
+            try:
+                self.data = np.loadtxt(csv_file,
+                                        skiprows = head, usecols=(0,1,2,3))
+            except:
+                self.data = np.loadtxt(csv_file, delimiter=',',
+                                        skiprows = head, usecols=(0,1,2,3))
             self.data = correct_data(self.data)
             self.data = self.data[:, 0:4]
             print 'hi'
@@ -210,7 +214,7 @@ class FrameTime:
                 self.units = guess_units(self.data)
             else:
                 self.units = units
-        except:
+        except IOError:
             raise IOError("Error reading file " + csv_file + \
                            " Check if file exists or if file is blank")
         try:

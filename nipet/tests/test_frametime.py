@@ -18,11 +18,13 @@ class TestFrametime(TestCase):
         ft.set_units('sec')
         assert_equal(ft.units, 'sec')
 
-    def test_guess_data(self):
+    def test_guess_units(self):
         sec = np.array([[1, 0, 3600, 3600],
-        assert_equal(frametime.guess_data(sec), 'sec')
+                        [2, 3600, 3600, 7200]])
+        assert_equal(frametime.guess_units(sec), 'sec')
         min = np.array([[1, 0, 36, 36],
-        assert_equal(frametime.guess_data(min), 'min')
+                        [2, 36, 36, 72]])
+        assert_equal(frametime.guess_units(min), 'min')
         
     def test_correct_data(self):
         good = np.array([[1, 0, 15, 15],
@@ -106,7 +108,6 @@ class TestFrametime(TestCase):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
-                                [3., 30., 15., 45.],
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
