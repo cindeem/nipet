@@ -38,6 +38,10 @@ def guess_units(data):
     return 'min'
 
 def calc_file_numbers(data):
+    """
+    Given a data array, which uses expected frame numbers,
+    generates output file numbers
+    """
     file_numbers = []
     expected_frame = 1
     diff = 0
@@ -47,6 +51,28 @@ def calc_file_numbers(data):
         file_numbers.append(frame[0] - diff)
     return np.array(file_numbers)
 
+def generate_output(data):
+    """
+    Given a data array, which uses expected frame numbers,
+    generate an output array including the proper file numbers, etc.
+    """
+    file_nums = calc_file_numbers(data)
+    file_nums.shape = (data.shape[0], 1)
+    fn_data = np.hstack((file_nums, data))
+    rows = data[-1,0]
+    out_data = np.empty((rows, 5))
+    row_num = 0
+    diff = 0
+    for frame in fn_data:
+        new_diff = int(frame[1] - frame[0])
+        for i in range(diff, new_diff):
+            out_data[row_num] = [np.nan, frame[0] + i, np.nan, np.nan, np.nan]
+            row_num = row_num + 1
+        diff = new_diff
+
+        out_data[row_num] = frame
+        row_num = row_num + 1
+    return out_data
 
 class FrameError(Exception):
     def __init__(self, msg):
@@ -294,11 +320,9 @@ class FrameTime:
             writer.writerow(['file number','expected frame', 'start time', 'duration', 'stop time', 'notes'])
             data = self.get_data(units)
 
-            print data
             file_nums = calc_file_numbers(data)
             file_nums.shape = (data.shape[0], 1)
             out_data = np.hstack((file_nums, data))
-            print out_data
             diff = 0
             for frame in out_data:
                 new_diff = int(frame[1] - frame[0])
@@ -329,7 +353,9 @@ class FrameTime:
             units = self.units
         try:
             filename = timestamp(outfile)
-            df = DataFrame(self.get_data(units), columns = ['frame', 'start time', 'duration', 'stop time'])
+            data = self.get_data(units)
+            data = generate_output(data)
+            df = DataFrame(data, columns = ['file number', 'expected frame', 'start time', 'duration', 'stop time'])
             df.to_excel(filename, sheet_name = 'Sheet1', index = False)
             return filename
         except IOError:
