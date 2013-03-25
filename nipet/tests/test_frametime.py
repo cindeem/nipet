@@ -119,7 +119,6 @@ class TestFrametime(TestCase):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
-                                [3., 30., 15., 45.],
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
@@ -131,7 +130,6 @@ class TestFrametime(TestCase):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
-                                [3., 30., 15., 45.],
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()
@@ -143,6 +141,15 @@ class TestFrametime(TestCase):
         f1 = ft.to_csv(outfile, 'sec')
         ft2.from_csv(f1, 'sec')
         assert_equal(ft2.data, sample_data)
+
+        raw_data = np.genfromtxt(f1, delimiter=',',
+                                skip_header = 1, usecols=(0,1,2,3,4))
+        sample_raw = np.array([[1., 1., 0., 15., 15.],
+                               [2., 2., 15., 15., 30.],
+                               [np.nan, 3., np.nan, np.nan, np.nan],
+                               [3., 4., 45., 15., 60.],
+                               [4., 5., 60., 30., 90.]])
+        assert_equal(raw_data, sample_raw)
         if exists(f1):
             os.remove(f1)
 
@@ -150,7 +157,6 @@ class TestFrametime(TestCase):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 15., 30.],
-                                [3., 30., 15., 45.],
                                 [4., 45., 15., 60.],
                                 [5., 60., 30., 90.]])
         ft = frametime.FrameTime()

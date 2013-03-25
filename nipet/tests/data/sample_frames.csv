@@ -1,6 +1,6 @@
-frame	start	duration	stop
-1	0	15	15
-2	15	15	30
-			
-4	45	15	60
-5	60	30	90
+frame_number,expected_frame,start time,duration,stop time,notes
+1,1,0,15,15,notes
+2,2,15,15,30,
+,3,,,,
+3,4,45,15,60,
+4,5,60,30,90,

@@ -22,11 +22,12 @@ def timestamp(filename):
 def correct_data(data):
     """
     If frame duration and frame stop time are switched, switch them back into the correct order.
+    If there are any nan's, remove that frame.
     """
     n_rows, n_col = data.shape
     if data[n_rows - 1, 3] < data[n_rows - 1, 2]:
         data[:, [2, 3]] = data[:, [3, 2]]
-    print 'hello world'
+    data = data[~np.isnan(data).any(axis=1)]
     return data
       
 def guess_units(data):
@@ -35,6 +36,17 @@ def guess_units(data):
     if data[n_rows - 1, 3] >= 1000:
         return 'sec'
     return 'min'
+
+def calc_file_numbers(data):
+    file_numbers = []
+    expected_frame = 1
+    diff = 0
+    for frame in data:
+        diff = diff + frame[0] - expected_frame
+        expected_frame = frame[0] + 1
+        file_numbers.append(frame[0] - diff)
+    return np.array(file_numbers)
+
 
 class FrameError(Exception):
     def __init__(self, msg):
@@ -200,17 +212,16 @@ class FrameTime:
                     head = 0
                 else:
                     head = 1
+            #workaround for weird delimiter issues
             try:
-                self.data = np.loadtxt(csv_file,
-                                        skiprows = head, usecols=(0,1,2,3))
+                data = np.genfromtxt(csv_file,
+                                        skip_header = head, usecols=(1,2,3,4))
             except:
-                self.data = np.loadtxt(csv_file, delimiter=',',
-                                        skiprows = head, usecols=(0,1,2,3))
-            self.data = correct_data(self.data)
-            self.data = self.data[:, 0:4]
-            print 'hi'
+                data = np.genfromtxt(csv_file, delimiter=',',
+                                        skip_header = head, usecols=(1,2,3,4))
+            data = correct_data(data)
+            self.data = data[:, 0:4]
             if not units:
-                print 'bye'
                 self.units = guess_units(self.data)
             else:
                 self.units = units
@@ -240,12 +251,12 @@ class FrameTime:
             #by using rec.astype all the same type
             #then calling .view(that type) with the result 
             #supposedly this is faster than the below method
-
+            print rec
             dat_arr = np.array(rec.tolist()) #pirate
-
             #get rid of the 'index' column from pandas
-            self.data = dat_arr[0:dat_arr.shape[0], 1:self.col_num + 1]
-            self.data = correct_data(self.data)
+            data = dat_arr[0:dat_arr.shape[0], 2:self.col_num + 2]
+            data = data.astype(np.float)
+            self.data = correct_data(data)
             if not units:
                 self.units = guess_units(self.data)
             else:
@@ -280,10 +291,21 @@ class FrameTime:
         filename = timestamp(outfile)
         with open(filename, 'wb') as out_file:
             writer = csv.writer(out_file, delimiter = ',')
-            writer.writerow(['frame', 'start time', 'duration', 'stop time'])
+            writer.writerow(['file number','expected frame', 'start time', 'duration', 'stop time', 'notes'])
             data = self.get_data(units)
+
             print data
-            for frame in data:
+            file_nums = calc_file_numbers(data)
+            file_nums.shape = (data.shape[0], 1)
+            out_data = np.hstack((file_nums, data))
+            print out_data
+            diff = 0
+            for frame in out_data:
+                new_diff = int(frame[1] - frame[0])
+                for i in range(diff, new_diff):
+                    writer.writerow(['', frame[0] + i, '', '', '', ''])
+                diff = new_diff
+
                 writer.writerow(frame)
         return filename
 
