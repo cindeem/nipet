@@ -191,13 +191,15 @@ class FrameTime:
         which can then be imported by this class."""
         outarray = np.array(np.zeros((frame_num + 1, self.col_num)), \
                              dtype = 'S12')
-        outarray[0] = ['frame number', 'start time', 'duration', 'stop time']
+        outarray[0] = ['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes']
         for i, f in enumerate(outarray):
             if i != 0:
                 f[0] = float(i)
-                f[1] = ''
+                f[1] = f[0]
                 f[2] = ''
                 f[3] = ''
+                f[4] = ''
+                f[5] = ''
         return outarray
 
     def from_array(self, array, units):
@@ -247,6 +249,7 @@ class FrameTime:
                                         skip_header = head, usecols=(1,2,3,4))
             data = correct_data(data)
             self.data = data[:, 0:4]
+
             if not units:
                 self.units = guess_units(self.data)
             else:
@@ -283,6 +286,7 @@ class FrameTime:
             data = dat_arr[0:dat_arr.shape[0], 2:self.col_num + 2]
             data = data.astype(np.float)
             self.data = correct_data(data)
+
             if not units:
                 self.units = guess_units(self.data)
             else:
@@ -320,16 +324,8 @@ class FrameTime:
             writer.writerow(['file number','expected frame', 'start time', 'duration', 'stop time', 'notes'])
             data = self.get_data(units)
 
-            file_nums = calc_file_numbers(data)
-            file_nums.shape = (data.shape[0], 1)
-            out_data = np.hstack((file_nums, data))
-            diff = 0
+            out_data = generate_output(data)
             for frame in out_data:
-                new_diff = int(frame[1] - frame[0])
-                for i in range(diff, new_diff):
-                    writer.writerow(['', frame[0] + i, '', '', '', ''])
-                diff = new_diff
-
                 writer.writerow(frame)
         return filename
 
