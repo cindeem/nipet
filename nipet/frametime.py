@@ -58,7 +58,8 @@ def calc_file_numbers(data):
 def generate_output(data):
     """
     Given a data array, which uses expected frame numbers,
-    generate an output array including the proper file numbers, etc.
+    generate an output array for writing to a file
+    including the proper file numbers, etc.
     """
     file_nums = calc_file_numbers(data)
     file_nums.shape = (data.shape[0], 1)
@@ -135,14 +136,13 @@ class FrameTime:
         and if the duration is equal to stop_time - start_time."""
         print frame
         if frame.shape[0] != self.col_num:
-            print "Bad number of columns"
+            raise FrameError('Bad number of columns')
             return False
         elif not (len(frame.shape) == 1 or frame.shape[1] == 1): 
-            print "Extra rows"
+            raise FrameError('Extra rows')
             return False
         elif abs(frame[2] - (frame[3] - frame[1])) > eps:
-            print "Frame entries unaligned"
-            print frame
+            raise FrameError('Frame entries unaligned')
             return False
         else:
             return True
@@ -179,8 +179,7 @@ class FrameTime:
                 raise FrameError("Misaligned frames")
             curr_start = frame[1]
             curr_stop = frame[3]
-            if not self._check_frame(frame):
-                raise FrameError("Bad frame")
+            self._check_frame(frame):
         if missing_frames:
             print 'Missing frames: ' + repr(missing_frames)
         return True
