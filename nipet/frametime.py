@@ -3,6 +3,7 @@ import csv
 from pandas import ExcelFile, read_csv, DataFrame
 from os.path import exists, splitext
 from datetime import datetime 
+archive_exts = ['gz']
 
 def _min_to_sec(minutes):
     """converts minutes to seconds, 
@@ -16,10 +17,13 @@ def _sec_to_min(seconds):
 
 def timestamp(filename):
     name, ext = splitext(filename)
+    if ext in archive_exts:
+        name, ext2 = splitext(name)
+        ext = ext + ext2
     return name + '_' + str(datetime.today()).replace(' ', '-') \
                                              .split('.')[0] + ext
 
-def correct_data(data):
+def correct_data_order(data):
     """
     If frame duration and frame stop time are switched, switch them back into the correct order.
     If there are any nan's, remove that frame.
@@ -31,7 +35,7 @@ def correct_data(data):
     return data
       
 def guess_units(data):
-    data = correct_data(data)
+    data = correct_data_order(data)
     n_rows = data.shape[0]
     if data[n_rows - 1, 3] >= 1000:
         return 'sec'
@@ -205,7 +209,7 @@ class FrameTime:
 
     def from_array(self, array, units):
         self.data = array
-        self.data = correct_data(self.data)
+        self.data = correct_data_order(self.data)
         self.units = units
         try:
             self._validate_frames()
@@ -215,7 +219,7 @@ class FrameTime:
     def from_ecat(self, ecat_file, units=None):
         """Pulls timing info from ecat and stores in an array"""
         #do stuff    
-        self.data = correct_data(self.data)
+        self.data = correct_data_order(self.data)
         if not units:
             self.units = guess_units(self.data)
         else:
@@ -248,7 +252,7 @@ class FrameTime:
             except:
                 data = np.genfromtxt(csv_file, delimiter=',',
                                         skip_header = head, usecols=(1,2,3,4))
-            data = correct_data(data)
+            data = correct_data_order(data)
             self.data = data[:, 0:4]
 
             if not units:
@@ -286,7 +290,7 @@ class FrameTime:
             #get rid of the 'index' column from pandas
             data = dat_arr[0:dat_arr.shape[0], 2:self.col_num + 2]
             data = data.astype(np.float)
-            self.data = correct_data(data)
+            self.data = correct_data_order(data)
 
             if not units:
                 self.units = guess_units(self.data)

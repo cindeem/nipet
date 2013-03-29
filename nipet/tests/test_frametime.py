@@ -26,13 +26,13 @@ class TestFrametime(TestCase):
                         [2, 36, 36, 72]])
         assert_equal(frametime.guess_units(min), 'min')
         
-    def test_correct_data(self):
+    def test_correct_data_order(self):
         good = np.array([[1, 0, 15, 15],
                          [2, 15, 15, 30]])
         bad = np.array([[1, 0, 15, 15],
                         [2, 15, 30, 15]])
-        assert_equal(good, frametime.correct_data(good)) 
-        assert_equal(good, frametime.correct_data(bad)) 
+        assert_equal(good, frametime.correct_data_order(good)) 
+        assert_equal(good, frametime.correct_data_order(bad)) 
 
     def test_check_frame(self): 
         ft = frametime.FrameTime()
