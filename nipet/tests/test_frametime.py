@@ -53,12 +53,12 @@ class TestFrametime(TestCase):
     def test_generate_protocol(self):
         ft = frametime.FrameTime()
         ft.set_units('sec')
-
-        protocol = ft.generate_empty_protocol(4)
-        assert_equal(protocol.shape, (5, 4))
-        header = np.array(['frame number', 'start time', 'duration', 'stop time'], dtype = 'S12')
-        line2 = np.array(['2.0', '', '', ''], dtype = 'S12')
-        line4 = np.array(['4.0', '', '', ''], dtype = 'S12')
+        rows = 4
+        protocol = ft.generate_empty_protocol(rows)
+        assert_equal(protocol.shape, (rows + 1, 6))
+        header = np.array(['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes'], dtype = 'S12')
+        line2 = np.array(['2.0','2.0', '', '', '', ''], dtype = 'S12')
+        line4 = np.array(['4.0', '4.0', '', '', '', ''], dtype = 'S12')
         assert_equal(protocol[0], header)
         assert_equal(protocol[2], line2)
         assert_equal(protocol[4], line4)
