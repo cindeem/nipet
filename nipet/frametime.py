@@ -2,6 +2,7 @@ import numpy as np
 import csv
 from pandas import ExcelFile, read_csv, DataFrame
 from os.path import exists, splitext
+import logging
 from datetime import datetime 
 archive_exts = ['gz']
 
@@ -136,12 +137,15 @@ class FrameTime:
         and if the duration is equal to stop_time - start_time."""
         print frame
         if frame.shape[0] != self.col_num:
+            logging.error('Bad number of columns')
             raise FrameError('Bad number of columns')
             return False
         elif not (len(frame.shape) == 1 or frame.shape[1] == 1): 
+            logging.error('Extra rows')
             raise FrameError('Extra rows')
             return False
         elif abs(frame[2] - (frame[3] - frame[1])) > eps:
+            logging.error('Frame entries unaligned')
             raise FrameError('Frame entries unaligned')
             return False
         else:
@@ -164,18 +168,22 @@ class FrameTime:
         missing_frames = []
         for frame in self.data:
             if frame[0] < 0:
+                logging.error('Negative frame number')
                 raise FrameError("Negative frame number") #make Error classes
             if frame[0] < curr:
+                logging.error('Frames out of order')
                 raise FrameError("Frames out of order") 
             if frame[0] != curr + 1:
                 for i in range(curr + 1, int(frame[0])): #alternative?
                     missing_frames.append(i) 
             curr = int(frame[0])
             if frame[1] < curr_stop:
+                logging.error('Frames overlapping')
                 raise FrameError("Overlapping frames") 
             if frame[0] - 1 not in missing_frames and abs(curr_stop - frame[1]) > eps:
                 print curr_stop
                 print frame
+                logging.error('Misaligned frames')
                 raise FrameError("Misaligned frames")
             curr_start = frame[1]
             curr_stop = frame[3]
