@@ -1,7 +1,6 @@
-frame,start,duration,stop
-1.0,0.0,15.0,15.0
-2.0,15.0,15.0,30.0
-3.0,30.0,15.0,45.0
-4.0,45.0,15.0,60.0
-5.0,60.0,30.0,90.0
-
+frame_number,expected_frame,start time,duration,stop time,notes
+1,1,0,15,15,notes
+2,2,15,15,30,
+,3,,,,
+3,4,45,15,60,
+4,5,60,30,90,
