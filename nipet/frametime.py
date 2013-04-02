@@ -3,6 +3,8 @@ import csv
 from pandas import ExcelFile, read_csv, DataFrame
 from os.path import exists, splitext
 from datetime import datetime 
+from nibabel import ecat
+
 
 def _min_to_sec(minutes):
     """converts minutes to seconds, 
@@ -214,8 +216,14 @@ class FrameTime:
 
     def from_ecat(self, ecat_file, units=None):
         """Pulls timing info from ecat and stores in an array"""
-        #do stuff    
-        self.data = correct_data(self.data)
+        shdrs = ecat.load(ecat_file).get_subheaders()
+        empty_ft = self.generate_empty_protocol(shdrs.get_nframes())
+        for val, (shdr, _) in enumerate(zip(shdrs.subheaders, empty_ft)):
+            start = shdr['frame_start_time'] / 1000
+            duration = shdr['frame_duration'] / 1000
+            empty_ft[val+1, 2:5] = [start, duration, start + duration]
+        self.data = empty_ft
+        # call to correct_data fails due to empty_ft dtype
         if not units:
             self.units = guess_units(self.data)
         else:
