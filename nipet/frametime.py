@@ -214,15 +214,31 @@ class FrameTime:
         except FrameError:
             raise DataError('Bad data', self.data, 'array')
 
-    def from_ecat(self, ecat_file, units=None):
-        """Pulls timing info from ecat and stores in an array"""
+
+    def _time_from_ecat(self, ecat_file, ft_array):
         shdrs = ecat.load(ecat_file).get_subheaders()
-        empty_ft = self.generate_empty_protocol(shdrs.get_nframes())
-        for val, (shdr, _) in enumerate(zip(shdrs.subheaders, empty_ft)):
+        mlist = ecat.load(ecat_file).get_mlist()
+        framelist = mlist.get_series_framenumbers().values()
+        for fn, shdr in zip(framelist, shdrs.subheaders):
             start = shdr['frame_start_time'] / 1000
             duration = shdr['frame_duration'] / 1000
-            empty_ft[val+1, 2:5] = [start, duration, start + duration]
-        self.data = empty_ft
+            ft_array[fn, 2:5] = [start, duration, start + duration]
+       
+
+    def from_ecats(self, ecat_files, units=None):
+        """Pulls timing info from ecat file(s) and stores in an array"""
+        if not hasattr(ecat_files, '__iter__'):
+            ecat_files = list(ecat_files)
+        nframes = 0
+        for f in ecat_files:
+            x, y, z, nf = ecat.load(f).get_shape()
+            nframes += nf
+        empty_ft = self.generate_empty_protocol(nframes)
+
+        for ef in ecat_files:
+            self._time_from_ecat(ef, empty_ft)
+
+        self.data = np.array(empty_ft[1:,1:5]).astype(float)
         # call to correct_data fails due to empty_ft dtype
         if not units:
             self.units = guess_units(self.data)
@@ -231,7 +247,7 @@ class FrameTime:
         try:
             self._validate_frames()
         except FrameError:
-            raise DataError('Bad data', self.data, ecat_file)
+            raise DataError('Bad data', self.data, ecat_files)
 
     def from_csv(self, csv_file, units=None): 
         """Pulls timing info from csv and stores in an array.
