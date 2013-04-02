@@ -228,7 +228,7 @@ class FrameTime:
     def from_ecats(self, ecat_files, units=None):
         """Pulls timing info from ecat file(s) and stores in an array"""
         if not hasattr(ecat_files, '__iter__'):
-            ecat_files = list(ecat_files)
+            ecat_files = [ecat_files]
         nframes = 0
         for f in ecat_files:
             x, y, z, nf = ecat.load(f).get_shape()
