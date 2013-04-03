@@ -93,16 +93,28 @@ class TestFrametime(TestCase):
                                         [3, 4, 5, 6]]))
 
     def test_from_ecat(self):
-        infile = join(split(abspath(__file__))[0], 'data/sample_frames.ecat')
-        sample_data = np.array([[1., 0., 15., 15.],
-                                [2., 15., 15., 30.],
-                                [3., 30., 15., 45.],
-                                [4., 45., 15., 60.],
-                                [5., 60., 30., 90.]])
+        infile = join(split(abspath(__file__))[0], 'data/fdg_2frames.v')
+        infile2 = join(split(abspath(__file__))[0], 'data', 'fdg_4frames.v')
+        sample_data = np.array([[   1.,    0.,  300.,  300.],
+                                [   2.,  300.,  300.,  600.]])
+
         ft = frametime.FrameTime()
-        ft.from_ecat(infile, 'sec')
+        ft.from_ecats(infile, 'sec')
         assert_equal(ft.data, sample_data)
         assert_equal(ft.get_units(), 'sec')
+        
+        # test multi-ecats
+        ft = frametime.FrameTime()
+        ft.from_ecats([infile2, infile])
+        sampledata = np.array([[   1,    0,  300,  300],
+                               [   2,  300,  300,  600],
+                               [   3,  600,  300,  900],
+                               [   4,  900,  300, 1200],
+                               [   5, 1200,  300, 1500],
+                               [   6, 1500,  300, 1800]])
+        assert_equal(ft.data, sampledata)
+
+
 
     def test_from_csv(self):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.csv')
