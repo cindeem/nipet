@@ -6,7 +6,7 @@ import time
 import tempfile
 import numpy as np
 import nibabel as ni
-import scipy.integrate
+from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
 import frametime
 
@@ -14,6 +14,11 @@ import frametime
 class Logan(object):
     """Calculates simplified Logan Graphical Analysis on 
     reversible tracers
+    
+    Logan J. A review of graphical methods for tracer studies 
+    and strategies to reduce bias.
+    Nucl Med Biol. 2003 Nov;30(8):833-44.
+       
     Parameters
     ----------
     timesteps : numpy array
@@ -33,6 +38,49 @@ class Logan(object):
 
         self.timesteps = timesteps
         self.ref_counts = ref_counts
+        self.k2ref = .15
+
+    def get_k2ref(self):
+        """ 
+        get current k2ref value
+        """
+        return self.k2ref
+
+    def set_k2ref(self, value):
+        """ change the current setting of k2ref"""
+        self.k2ref = value
+
+    def _integrate_reference(self):
+        """
+        returns a cumulative integration of 
+        ref_counts with timesteps
+        uses cumulative trapezoidal integration"""
+        int_ref = np.zeros(self.ref_counts.shape)
+        int_ref[1:] = cumtrapz(self.ref_counts, self.timesteps)
+        self.int_ref = int_ref
+
+    def calc_xy(self, dat, k2ref=.15):
+        """calculates the x and y terms used in Logan Graphical Analysis
+        y = integrated_data / data
+        x = integrated_reference / data + (1 / k2ref) * reference / data
+        """
+        big_durs = repmat_1d(midtimes,masked_dat.shape[0])
+        int_dat = scipy.integrate.cumtrapz(masked_dat.T,big_durs.T,axis=0)
+        big_ref = repmat_1d(ref,masked_dat.shape[0])
+        int_ref = scipy.integrate.cumtrapz(big_ref.T,big_durs.T, axis=0)
+        y = (int_dat.T)  / masked_dat[:,1:]# 33, nvox in mask
+        x = (int_ref.T / masked_dat[:,1:]) + ( 1 / k2ref) *(big_ref[:,1:] / masked_dat[:,1:]) 
+        return x,y    
+
+    def region_xy(ref, region, midtimes, k2ref = .15):
+        """ used to calc cumulative integral
+        for one dimensional region"""
+        int_dat = scipy.integrate.cumtrapz(region,midtimes,axis=0) 
+        int_ref = scipy.integrate.cumtrapz(ref.squeeze(), midtimes, axis=0)
+        y = int_dat / region[1:]
+        x = (int_ref / region[1:]) + ( 1 / k2ref) *(midtimes[1:] / region[1:])
+        return x, y
+
 
 
 def get_ref(refroi, dat):
@@ -113,16 +161,7 @@ def get_ki_vd_polyfit(x,y):
     return ki, vd, resids
 
 
-
-def integrate_reference(reference_data, delta_time):
-    """
-    returns a cumulative integration of reference_data with delta_time
-    uses np.cumtrapz"""
-    int_ref = np.zeros(reference_data.shape)
-    int_ref[1:] = scipy.integrate.cumtrapz(reference_data, delta_time)
-    return int_ref
-
-    
+   
 def save_inputplot(ref, midframes, outdir):
     """saves input TAC to png figure
     """
@@ -162,19 +201,6 @@ def repmat_1d(x, n):
     newx = np.tile(x, n)
     newx.shape = tuple([n] + [i for i in x.shape])
     return newx
-
-def calc_xy(ref, masked_dat,midtimes, k2ref=.15):
-    """calculates the x and y terms used in Logan Graphical Analysis
-    y = integrated_data / data
-    x = integrated_reference / data + (1 / k2ref) * reference / data
-    """
-    big_durs = repmat_1d(midtimes,masked_dat.shape[0])
-    int_dat = scipy.integrate.cumtrapz(masked_dat.T,big_durs.T,axis=0)
-    big_ref = repmat_1d(ref,masked_dat.shape[0])
-    int_ref = scipy.integrate.cumtrapz(big_ref.T,big_durs.T, axis=0)
-    y = (int_dat.T)  / masked_dat[:,1:]# 33, nvox in mask
-    x = (int_ref.T / masked_dat[:,1:]) + ( 1 / k2ref) *(big_ref[:,1:] / masked_dat[:,1:]) 
-    return x,y    
 
 def get_lstsq(x,y):
     """solves best fitting line using np.linalg.lstsq
@@ -239,15 +265,6 @@ def loganplot(ref,region, timing, outdir):
     plt.savefig(outfile)
     plt.clf()
 
-
-def region_xy(ref, region, midtimes, k2ref = .15):
-    """ used to calc cumulative integral
-    for one dimensional region"""
-    int_dat = scipy.integrate.cumtrapz(region,midtimes,axis=0) 
-    int_ref = scipy.integrate.cumtrapz(ref.squeeze(), midtimes, axis=0)
-    y = int_dat / region[1:]
-    x = (int_ref / region[1:]) + ( 1 / k2ref) *(midtimes[1:] / region[1:])
-    return x, y
 
 
 def get_labelroi_data(data, labelf, labels):
