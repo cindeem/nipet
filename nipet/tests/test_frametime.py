@@ -61,7 +61,6 @@ class TestFrametime(TestCase):
         assert_equal(protocol[2 - 1], line2)
         assert_equal(protocol[4 - 1], line4)
         ft.from_array(protocol, 'sec')
-        assert_equal(ft.data, np.array())
 
     def test_validate_frames(self):
         frames = np.random.random((5, 3))
