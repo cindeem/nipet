@@ -225,13 +225,6 @@ class FrameTime:
             raise DataError('Bad data', self.data, 'array')
         return self 
 
-<<<<<<< HEAD
-    def from_ecat(self, ecat_file, units=None):
-        """Pulls timing info from ecat and stores in an array"""
-        #do stuff    
-        self.data = correct_data_order(self.data)
-=======
-
     def _time_from_ecat(self, ecat_file, ft_array):
         shdrs = ecat.load(ecat_file).get_subheaders()
         mlist = ecat.load(ecat_file).get_mlist()
@@ -257,7 +250,6 @@ class FrameTime:
 
         self.data = np.array(empty_ft[1:,1:5]).astype(float)
         # call to correct_data fails due to empty_ft dtype
->>>>>>> 9be1a199fae179f54187dc01d47e1b2ca0500b82
         if not units:
             self.units = guess_units(self.data)
         else:
@@ -265,12 +257,8 @@ class FrameTime:
         try:
             self._validate_frames()
         except FrameError:
-<<<<<<< HEAD
             raise DataError('Bad data', self.data, ecat_file)
         return self 
-=======
-            raise DataError('Bad data', self.data, ecat_files)
->>>>>>> 9be1a199fae179f54187dc01d47e1b2ca0500b82
 
     def from_csv(self, csv_file, units=None): 
         """Pulls timing info from csv and stores in an array.
