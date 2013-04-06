@@ -112,6 +112,7 @@ class FrameTime:
         self.col_num = 4
         self.units = None 
         self.data = None
+        return self
 
     def set_units(self, units):
         """
@@ -220,6 +221,7 @@ class FrameTime:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, 'array')
+        return self 
 
     def from_ecat(self, ecat_file, units=None):
         """Pulls timing info from ecat and stores in an array"""
@@ -233,6 +235,7 @@ class FrameTime:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, ecat_file)
+        return self 
 
     def from_csv(self, csv_file, units=None): 
         """Pulls timing info from csv and stores in an array.
@@ -271,6 +274,7 @@ class FrameTime:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, csv_file)
+        return self 
 
     def from_excel(self, excel_file, units=None):
         """Pulls timing info from excel file and stores in an array.
@@ -307,6 +311,7 @@ class FrameTime:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, excel_file)
+        return self 
 
     def to_csv(self, outfile, units = None):
         """Export timing info to csv file
