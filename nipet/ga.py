@@ -8,8 +8,33 @@ import numpy as np
 import nibabel as ni
 import scipy.integrate
 import matplotlib.pyplot as plt
-import frametimes
- 
+import frametime
+
+
+class Logan(object):
+    """Calculates simplified Logan Graphical Analysis on 
+    reversible tracers
+    Parameters
+    ----------
+    timesteps : numpy array
+        array of timepoints used to integrate data representing when counts
+        were calculated
+    ref_counts : numpy array or list
+        tracer counts in reference region at each timestep
+
+    """
+    def __init__(self, timesteps, ref_counts):
+        if not timesteps.shape == ref_counts.shape:
+            msg = """Number of timesteps and reference region
+            samples must be the same
+            timesteps = %s
+            reference samples = %s"""%(timesteps.shape, ref_counts.shape)
+            raise IOError(msg)
+
+        self.timesteps = timesteps
+        self.ref_counts = ref_counts
+
+
 def get_ref(refroi, dat):
     """given region of interest, extracts mean for each frame
     in dat, returns vector of means across time
