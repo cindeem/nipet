@@ -114,7 +114,6 @@ class FrameTime:
         self.col_num = 4
         self.units = None 
         self.data = None
-        return self
 
     def set_units(self, units):
         """
