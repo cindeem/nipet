@@ -56,10 +56,10 @@ class TestFrametime(TestCase):
         rows = 4
         protocol = ft.generate_empty_protocol(rows)
         assert_equal(protocol.shape, (rows + 1, 4))
-        line2 = np.array([2.0,2.0, np.nan, np.nan])
-        line4 = np.array([4.0, 4.0, np.nan, np.nan])
-        assert_equal(protocol[2 - 1], line2)
-        assert_equal(protocol[4 - 1], line4)
+        line2 = np.array([2.0, np.nan, np.nan, np.nan])
+        line4 = np.array([4.0, np.nan, np.nan, np.nan])
+        assert_equal(protocol[2], line2)
+        assert_equal(protocol[4], line4)
         ft.from_array(protocol, 'sec')
 
     def test_validate_frames(self):

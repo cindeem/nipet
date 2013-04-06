@@ -203,11 +203,13 @@ class FrameTime:
         """Generates empty data array 
         """
         outarray = np.array(np.zeros((frame_num + 1, self.col_num)))
+        outarray[0] = np.array([np.nan, np.nan, np.nan, np.nan])
         for i, f in enumerate(outarray):
-            f[0] = float(i) + 1
-            f[1] = f[0]
-            f[2] = np.nan
-            f[3] = np.nan
+            if i != 0:
+                f[0] = float(i)
+                f[1] = np.nan
+                f[2] = np.nan
+                f[3] = np.nan
         print outarray
         return outarray
 
@@ -231,9 +233,8 @@ class FrameTime:
         for fn, shdr in zip(framelist, shdrs.subheaders):
             start = shdr['frame_start_time'] / 1000
             duration = shdr['frame_duration'] / 1000
-            ft_array[fn, 2:5] = [start, duration, start + duration]
+            ft_array[fn, 1:4] = [start, duration, start + duration]
        
-
     def from_ecats(self, ecat_files, units=None):
         """Pulls timing info from ecat file(s) and stores in an array"""
         if not hasattr(ecat_files, '__iter__'):
@@ -247,16 +248,18 @@ class FrameTime:
         for ef in ecat_files:
             self._time_from_ecat(ef, empty_ft)
 
-        self.data = np.array(empty_ft[1:,1:5]).astype(float)
+        self.data = np.array(empty_ft[0:,0:4]).astype(float)
         # call to correct_data fails due to empty_ft dtype
         if not units:
             self.units = guess_units(self.data)
         else:
             self.units = units
         try:
+            
+            self.data = correct_data_order(self.data)
             self._validate_frames()
         except FrameError:
-            raise DataError('Bad data', self.data, ecat_file)
+            raise DataError('Bad data', self.data, ecat_files)
         return self 
 
     def from_csv(self, csv_file, units=None): 
