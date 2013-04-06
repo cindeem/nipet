@@ -187,7 +187,7 @@ class FrameTime:
                 raise FrameError("Misaligned frames")
             curr_start = frame[1]
             curr_stop = frame[3]
-            self._check_frame(frame):
+            self._check_frame(frame)
         if missing_frames:
             print 'Missing frames: ' + repr(missing_frames)
         return True
@@ -198,23 +198,21 @@ class FrameTime:
             return self.units
 
     def generate_empty_protocol(self, frame_num):
-        """Generates empty csv/excel file with header for frametimes,
-        which can then be imported by this class."""
-        outarray = np.array(np.zeros((frame_num + 1, self.col_num + 2)), \
-                             dtype = 'S12')
-        outarray[0] = ['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes']
+        """Generates empty data array 
+        """
+        outarray = np.array(np.zeros((frame_num + 1, self.col_num)))
         for i, f in enumerate(outarray):
-            if i != 0:
-                f[0] = float(i)
-                f[1] = f[0]
-                f[2] = ''
-                f[3] = ''
-                f[4] = ''
-                f[5] = ''
+            f[0] = float(i) + 1
+            f[1] = f[0]
+            f[2] = np.nan
+            f[3] = np.nan
         print outarray
         return outarray
 
     def from_array(self, array, units):
+        """Imports timing info from array in same format.
+        Doesn't remove empty frames
+        """
         self.data = array
         self.data = correct_data_order(self.data)
         self.units = units

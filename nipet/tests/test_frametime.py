@@ -39,13 +39,13 @@ class TestFrametime(TestCase):
         ft.set_units('sec')
 
         badframe = np.array([2., 6., 27., 33., 1.])
-        assert_equal(ft._check_frame(badframe), False)
+        assert_raises(FrameError, ft._check_frame, badframe)
 
         badframe = np.random.random((4, 2))
-        assert_equal(ft._check_frame(badframe), False)
+        assert_raises(FrameError, ft._check_frame, badframe)
 
         badframe = np.array([2., 6., 27., 34.])
-        assert_equal(ft._check_frame(badframe), False)
+        assert_raises(FrameError, ft._check_frame, badframe)
 
         frame = np.array([1., 6., 27., 33.])
         assert_equal(ft._check_frame(frame), True)
@@ -55,13 +55,13 @@ class TestFrametime(TestCase):
         ft.set_units('sec')
         rows = 4
         protocol = ft.generate_empty_protocol(rows)
-        assert_equal(protocol.shape, (rows + 1, 6))
-        header = np.array(['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes'], dtype = 'S12')
-        line2 = np.array(['2.0','2.0', '', '', '', ''], dtype = 'S12')
-        line4 = np.array(['4.0', '4.0', '', '', '', ''], dtype = 'S12')
-        assert_equal(protocol[0], header)
-        assert_equal(protocol[2], line2)
-        assert_equal(protocol[4], line4)
+        assert_equal(protocol.shape, (rows + 1, 4))
+        line2 = np.array([2.0,2.0, np.nan, np.nan])
+        line4 = np.array([4.0, 4.0, np.nan, np.nan])
+        assert_equal(protocol[2 - 1], line2)
+        assert_equal(protocol[4 - 1], line4)
+        ft.from_array(protocol, 'sec')
+        assert_equal(ft.data, np.array())
 
     def test_validate_frames(self):
         frames = np.random.random((5, 3))
