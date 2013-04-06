@@ -64,21 +64,22 @@ def generate_output(data):
     generate an output array for writing to a file
     including the proper file numbers, etc.
     """
+    data = data[~np.isnan(data).all(axis=1)]
     file_nums = calc_file_numbers(data)
     file_nums.shape = (data.shape[0], 1)
     fn_data = np.hstack((file_nums, data))
     rows = data[-1,0]
-    out_data = np.empty((rows, 5))
+    out_data = np.empty((rows, 6))
     row_num = 0
     diff = 0
     for frame in fn_data:
         new_diff = int(frame[1] - frame[0])
         for i in range(diff, new_diff):
-            out_data[row_num] = [np.nan, frame[0] + i, np.nan, np.nan, np.nan]
+            out_data[row_num] = [np.nan, frame[0] + i, np.nan, np.nan, np.nan, np.nan]
             row_num = row_num + 1
         diff = new_diff
 
-        out_data[row_num] = frame
+        out_data[row_num] = np.append(frame, np.nan)
         row_num = row_num + 1
     return out_data
 
@@ -391,7 +392,7 @@ class FrameTime:
             filename = timestamp(outfile)
             data = self.get_data(units)
             data = generate_output(data)
-            df = DataFrame(data, columns = ['file number', 'expected frame', 'start time', 'duration', 'stop time'])
+            df = DataFrame(data, columns = ['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes'])
             df.to_excel(filename, sheet_name = 'Sheet1', index = False)
             return filename
         except IOError:
