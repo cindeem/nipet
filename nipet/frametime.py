@@ -231,8 +231,10 @@ class FrameTime:
             ecat_files = [ecat_files]
         nframes = 0
         for f in ecat_files:
-            x, y, z, nf = ecat.load(f).get_shape()
-            nframes += nf
+            hdr = ecat.load(f).get_header()
+            if hdr['num_frames'] > nframes:
+                nframes = hdr['num_frames']
+                print nframes
         empty_ft = self.generate_empty_protocol(nframes)
 
         for ef in ecat_files:
