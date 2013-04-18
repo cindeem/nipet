@@ -26,28 +26,30 @@ class TestFrametime(TestCase):
                         [2, 36, 36, 72]])
         assert_equal(frametime.guess_units(min), 'min')
         
-    def test_correct_data(self):
+    def test_correct_data_order(self):
+        ft = frametime.FrameTime()
+        ft.set_units('sec')
         good = np.array([[1, 0, 15, 15],
                          [2, 15, 15, 30]])
         bad = np.array([[1, 0, 15, 15],
                         [2, 15, 30, 15]])
-        assert_equal(good, frametime.correct_data(good)) 
-        assert_equal(good, frametime.correct_data(bad)) 
+        assert_equal(good, ft.correct_data_order(good)) 
+        assert_equal(good, ft.correct_data_order(bad)) 
 
     def test_check_frame(self): 
         ft = frametime.FrameTime()
         ft.set_units('sec')
 
         badframe = np.array([2., 6., 27., 33., 1.])
-        assert_equal(ft._check_frame(badframe), False)
+        assert_raises(FrameError, ft._check_frame, badframe)
 
         badframe = np.random.random((4, 2))
-        assert_equal(ft._check_frame(badframe), False)
+        assert_raises(FrameError, ft._check_frame, badframe)
 
         badframe = np.array([2., 6., 27., 34.])
-        assert_equal(ft._check_frame(badframe), False)
+        assert_raises(FrameError, ft._check_frame, badframe)
 
-        frame = np.array([1., 6., 27., 33.])
+        frame = np.array([1., 6., 33., 27.])
         assert_equal(ft._check_frame(frame), True)
 
     def test_generate_protocol(self):
@@ -55,13 +57,12 @@ class TestFrametime(TestCase):
         ft.set_units('sec')
         rows = 4
         protocol = ft.generate_empty_protocol(rows)
-        assert_equal(protocol.shape, (rows + 1, 6))
-        header = np.array(['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes'], dtype = 'S12')
-        line2 = np.array(['2.0','2.0', '', '', '', ''], dtype = 'S12')
-        line4 = np.array(['4.0', '4.0', '', '', '', ''], dtype = 'S12')
-        assert_equal(protocol[0], header)
-        assert_equal(protocol[2], line2)
-        assert_equal(protocol[4], line4)
+        assert_equal(protocol.shape, (rows, 4))
+        line2 = np.array([2.0, np.nan, np.nan, np.nan])
+        line4 = np.array([4.0, np.nan, np.nan, np.nan])
+        assert_equal(protocol[2 - 1], line2)
+        assert_equal(protocol[4 - 1], line4)
+        ft.from_array(protocol, 'sec')
 
     def test_validate_frames(self):
         frames = np.random.random((5, 3))
@@ -76,8 +77,8 @@ class TestFrametime(TestCase):
         ft.data = frames
         assert_raises(FrameError, ft._validate_frames)
         frames = np.array([[1, 0, 5, 5], 
-                           [2, 5, 3, 8],
-                           [4, 9, 5, 14]])
+                           [2, 5, 8, 3],
+                           [3, 9, 14, 5]])
         ft.data = frames
         assert_equal(ft._validate_frames(), True)
 
@@ -119,9 +120,9 @@ class TestFrametime(TestCase):
     def test_from_csv(self):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.csv')
         sample_data = np.array([[1., 0., 15., 15.],
-                                [2., 15., 15., 30.],
-                                [4., 45., 15., 60.],
-                                [5., 60., 30., 90.]])
+                                [2., 15., 30., 15.],
+                                [3., 45., 60., 15.],
+                                [4., 60., 90., 30.]])
         ft = frametime.FrameTime()
         ft.from_csv(infile, 'sec')
         assert_equal(ft.data, sample_data)
@@ -130,9 +131,9 @@ class TestFrametime(TestCase):
     def test_from_excel(self):
         infile = join(split(abspath(__file__))[0], 'data/sample_frames.xls')
         sample_data = np.array([[1., 0., 15., 15.],
-                                [2., 15., 15., 30.],
-                                [4., 45., 15., 60.],
-                                [5., 60., 30., 90.]])
+                                [2., 15., 30., 15.],
+                                [3., 45., 60., 15.],
+                                [4., 60., 90., 30.]])
         ft = frametime.FrameTime()
         ft.from_excel(infile, 'sec')
         assert_equal(ft.data, sample_data)
@@ -141,9 +142,9 @@ class TestFrametime(TestCase):
     def test_to_csv(self):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.csv')
         sample_data = np.array([[1., 0., 15., 15.],
-                                [2., 15., 15., 30.],
-                                [4., 45., 15., 60.],
-                                [5., 60., 30., 90.]])
+                                [2., 15., 30., 15.],
+                                [3., 45., 60., 15.],
+                                [4., 60., 90., 30.]])
         ft = frametime.FrameTime()
         assert_raises(DataError, ft.to_csv, outfile)
         ft.set_units('sec')
@@ -153,24 +154,16 @@ class TestFrametime(TestCase):
         f1 = ft.to_csv(outfile, 'sec')
         ft2.from_csv(f1, 'sec')
         assert_equal(ft2.data, sample_data)
-
-        raw_data = np.genfromtxt(f1, delimiter=',',
-                                skip_header = 1, usecols=(0,1,2,3,4))
-        sample_raw = np.array([[1., 1., 0., 15., 15.],
-                               [2., 2., 15., 15., 30.],
-                               [np.nan, 3., np.nan, np.nan, np.nan],
-                               [3., 4., 45., 15., 60.],
-                               [4., 5., 60., 30., 90.]])
-        assert_equal(raw_data, sample_raw)
         if exists(f1):
             os.remove(f1)
 
     def test_to_excel(self):
         outfile = join(split(abspath(__file__))[0], 'data/sample_out.xls')
         sample_data = np.array([[1., 0., 15., 15.],
-                                [2., 15., 15., 30.],
-                                [4., 45., 15., 60.],
-                                [5., 60., 30., 90.]])
+                                [2., 15., 30., 15.],
+                                [3., 45., 60., 15.],
+                                [4., 60., 90., 30.]])
+        
         ft = frametime.FrameTime()
         assert_raises(DataError, ft.to_excel, outfile)
         ft.set_units('sec')
@@ -210,12 +203,47 @@ class TestFrametime(TestCase):
         assert_almost_equal(ft.to_sec(), frames)
         assert_almost_equal(ft.to_min(), min_frames)
 
+    def test_get_start_times(self):  
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 30., 15.],
+                                [3., 30., 45., 15.],
+                                [4., 45., 60., 15.],
+                                [5., 60., 90., 30.]])
+
+        ft = frametime.FrameTime()
+        ft.data = sample_data
+        start_times = ft.get_start_times()
+        expected = np.array([[1, 0.],
+                             [2, 15.],
+                             [3, 30.], 
+                             [4, 45.],
+                             [5, 60.]])
+        assert_equal(start_times, expected)
+
+    def test_get_stop_times(self):  
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 30., 15.],
+                                [3., 30., 45., 15.],
+                                [4., 45., 60., 15.],
+                                [5., 60., 90., 30.]])
+
+        ft = frametime.FrameTime()
+        ft.data = sample_data
+        stop_times = ft.get_stop_times()
+        expected = np.array([[1, 15.],
+                             [2, 30.],
+                             [3, 45.], 
+                             [4, 60.],
+                             [5, 90.]])
+        assert_equal(stop_times, expected)
+
     def test_get_midtimes(self):  
         sample_data = np.array([[1., 0., 15., 15.],
-                                [2., 15., 15., 30.],
-                                [3., 30., 15., 45.],
-                                [4., 45., 15., 60.],
-                                [5., 60., 30., 90.]])
+                                [2., 15., 30., 15.],
+                                [3., 30., 45., 15.],
+                                [4., 45., 60., 15.],
+                                [5., 60., 90., 30.]])
+
         ft = frametime.FrameTime()
         ft.data = sample_data
         midtimes = ft.get_midtimes()
