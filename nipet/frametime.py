@@ -199,13 +199,16 @@ class FrameTime:
         return self 
 
     def _time_from_ecat(self, ecat_file, ft_array):
+        """ fills in a fiels of empty ft_array using
+        data from the ecat mlist and subheaders"""
         shdrs = ecat.load(ecat_file).get_subheaders()
         mlist = ecat.load(ecat_file).get_mlist()
         framelist = mlist.get_series_framenumbers().values()
         for fn, shdr in zip(framelist, shdrs.subheaders):
             start = shdr['frame_start_time'] / 1000
             duration = shdr['frame_duration'] / 1000
-            ft_array[fn, 1:4] = [start, duration, start + duration]
+            idx = np.where(ft_array[:,0] == fn)
+            ft_array[idx, 1:] = [start, duration, start + duration]
        
     def from_ecats(self, ecat_files, units=None):
         """Pulls timing info from ecat file(s) and stores in an array"""
