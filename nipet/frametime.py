@@ -2,7 +2,9 @@ import numpy as np
 import csv
 from pandas import ExcelFile, read_csv, DataFrame
 from os.path import exists, splitext
+import logging
 from datetime import datetime 
+archive_exts = ['gz']
 from nibabel import ecat
 
 
@@ -18,22 +20,13 @@ def _sec_to_min(seconds):
 
 def timestamp(filename):
     name, ext = splitext(filename)
+    if ext in archive_exts:
+        name, ext2 = splitext(name)
+        ext = ext + ext2
     return name + '_' + str(datetime.today()).replace(' ', '-') \
                                              .split('.')[0] + ext
-
-def correct_data(data):
-    """
-    If frame duration and frame stop time are switched, switch them back into the correct order.
-    If there are any nan's, remove that frame.
-    """
-    n_rows, n_col = data.shape
-    if data[n_rows - 1, 3] < data[n_rows - 1, 2]:
-        data[:, [2, 3]] = data[:, [3, 2]]
-    data = data[~np.isnan(data).any(axis=1)]
-    return data
       
 def guess_units(data):
-    data = correct_data(data)
     n_rows = data.shape[0]
     if data[n_rows - 1, 3] >= 1000:
         return 'sec'
@@ -52,30 +45,6 @@ def calc_file_numbers(data):
         expected_frame = frame[0] + 1
         file_numbers.append(frame[0] - diff)
     return np.array(file_numbers)
-
-def generate_output(data):
-    """
-    Given a data array, which uses expected frame numbers,
-    generate an output array including the proper file numbers, etc.
-    """
-    file_nums = calc_file_numbers(data)
-    file_nums.shape = (data.shape[0], 1)
-    fn_data = np.hstack((file_nums, data))
-    rows = data[-1,0]
-    out_data = np.empty((rows, 5))
-    row_num = 0
-    diff = 0
-    for frame in fn_data:
-        new_diff = int(frame[1] - frame[0])
-        for i in range(diff, new_diff):
-            out_data[row_num] = [np.nan, frame[0] + i, np.nan, np.nan, np.nan]
-            row_num = row_num + 1
-        diff = new_diff
-
-        out_data[row_num] = frame
-        row_num = row_num + 1
-    return out_data
-
 class FrameError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -108,6 +77,30 @@ class FrameTime:
         self.col_num = 4
         self.units = None 
         self.data = None
+        self.start = 1
+        self.stop = 2
+        self.duration = 3
+
+    def correct_data_order(self, data):
+        """
+        If frame duration and frame stop time are switched, switch them back into the correct order.
+        If there are any nan's, remove that frame.
+        """
+        n_rows, n_col = data.shape
+        print data
+        if data[n_rows - 1, self.stop] < data[n_rows - 1, self.duration]:
+            data[:, [self.stop, self.duration]] = data[:, [self.duration, self.stop]]
+        data = data[~np.isnan(data).any(axis=1)]
+        return data
+
+    def generate_output(self, data):
+        """
+        Given a data array, which uses expected frame numbers,
+        generate an output array for writing to a file
+        including the proper file numbers, etc.
+        """
+        return data
+
 
     def set_units(self, units):
         """
@@ -133,14 +126,19 @@ class FrameTime:
         and if the duration is equal to stop_time - start_time."""
         print frame
         if frame.shape[0] != self.col_num:
-            print "Bad number of columns"
+            logging.error('Bad number of columns')
+            raise FrameError('Bad number of columns')
             return False
         elif not (len(frame.shape) == 1 or frame.shape[1] == 1): 
-            print "Extra rows"
+            logging.error('Extra rows')
+            raise FrameError('Extra rows')
             return False
-        elif abs(frame[2] - (frame[3] - frame[1])) > eps:
-            print "Frame entries unaligned"
-            print frame
+        elif abs(frame[self.duration] - (frame[self.stop] - frame[self.start])) > eps:
+            print frame[self.stop]
+            print frame[self.duration]
+            print frame[self.duration] - (frame[self.stop] - frame[self.start])
+            logging.error('Frame entries unaligned')
+            raise FrameError('Frame entries unaligned')
             return False
         else:
             return True
@@ -159,28 +157,20 @@ class FrameTime:
         curr = 0 #can replace with fnum in loop
         curr_start = 0
         curr_stop = 0
-        missing_frames = []
         for frame in self.data:
+            curr = curr + 1
+            if curr != frame[0]:
+                raise FrameError('Numbers not consecutive') #make Error classes
+                logging.error('Numbers not consecutive')
             if frame[0] < 0:
+                logging.error('Negative frame number')
                 raise FrameError("Negative frame number") #make Error classes
-            if frame[0] < curr:
-                raise FrameError("Frames out of order") 
-            if frame[0] != curr + 1:
-                for i in range(curr + 1, int(frame[0])): #alternative?
-                    missing_frames.append(i) 
-            curr = int(frame[0])
-            if frame[1] < curr_stop:
+            if frame[self.start] < curr_stop:
+                logging.error('Frames overlapping')
                 raise FrameError("Overlapping frames") 
-            if frame[0] - 1 not in missing_frames and abs(curr_stop - frame[1]) > eps:
-                print curr_stop
-                print frame
-                raise FrameError("Misaligned frames")
-            curr_start = frame[1]
-            curr_stop = frame[3]
-            if not self._check_frame(frame):
-                raise FrameError("Bad frame")
-        if missing_frames:
-            print 'Missing frames: ' + repr(missing_frames)
+            curr_start = frame[self.start]
+            curr_stop = frame[self.stop]
+            self._check_frame(frame)
         return True
 
     def get_units(self):
@@ -189,31 +179,24 @@ class FrameTime:
             return self.units
 
     def generate_empty_protocol(self, frame_num):
-        """Generates empty csv/excel file with header for frametimes,
-        which can then be imported by this class."""
-        outarray = np.array(np.zeros((frame_num + 1, self.col_num + 2)), \
-                             dtype = 'S12')
-        outarray[0] = ['file number', 'expected frame', 'start time', 'duration', 'stop time', 'notes']
+        """Generates empty data array 
+        """
+        outarray = np.array(np.zeros((frame_num, self.col_num)))
         for i, f in enumerate(outarray):
-            if i != 0:
-                f[0] = float(i)
-                f[1] = f[0]
-                f[2] = ''
-                f[3] = ''
-                f[4] = ''
-                f[5] = ''
+            f[0] = float(i) + 1
+            f[1] = np.nan
+            f[2] = np.nan
+            f[3] = np.nan
         print outarray
         return outarray
 
     def from_array(self, array, units):
+        """Imports timing info from array in same format.
+        Doesn't perform any checks, so be careful when using this method
+        """
         self.data = array
-        self.data = correct_data(self.data)
         self.units = units
-        try:
-            self._validate_frames()
-        except FrameError:
-            raise DataError('Bad data', self.data, 'array')
-
+        return self 
 
     def _time_from_ecat(self, ecat_file, ft_array):
         shdrs = ecat.load(ecat_file).get_subheaders()
@@ -222,9 +205,8 @@ class FrameTime:
         for fn, shdr in zip(framelist, shdrs.subheaders):
             start = shdr['frame_start_time'] / 1000
             duration = shdr['frame_duration'] / 1000
-            ft_array[fn, 2:5] = [start, duration, start + duration]
+            ft_array[fn, 1:4] = [start, duration, start + duration]
        
-
     def from_ecats(self, ecat_files, units=None):
         """Pulls timing info from ecat file(s) and stores in an array"""
         if not hasattr(ecat_files, '__iter__'):
@@ -240,16 +222,18 @@ class FrameTime:
         for ef in ecat_files:
             self._time_from_ecat(ef, empty_ft)
 
-        self.data = np.array(empty_ft[1:,1:5]).astype(float)
+        self.data = np.array(empty_ft[0:,0:4]).astype(float)
         # call to correct_data fails due to empty_ft dtype
         if not units:
             self.units = guess_units(self.data)
         else:
             self.units = units
         try:
+            self.data = self.correct_data_order(self.data)
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, ecat_files)
+        return self 
 
     def from_csv(self, csv_file, units=None): 
         """Pulls timing info from csv and stores in an array.
@@ -270,11 +254,12 @@ class FrameTime:
             #workaround for weird delimiter issues
             try:
                 data = np.genfromtxt(csv_file,
-                                        skip_header = head, usecols=(1,2,3,4))
+                                     delimiter = ',',
+                                     skip_header = head)
             except:
-                data = np.genfromtxt(csv_file, delimiter=',',
-                                        skip_header = head, usecols=(1,2,3,4))
-            data = correct_data(data)
+                data = np.genfromtxt(csv_file, 
+                                     skip_header = head)
+            data = self.correct_data_order(data)
             self.data = data[:, 0:4]
 
             if not units:
@@ -288,6 +273,7 @@ class FrameTime:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, csv_file)
+        return self 
 
     def from_excel(self, excel_file, units=None):
         """Pulls timing info from excel file and stores in an array.
@@ -310,9 +296,9 @@ class FrameTime:
             print rec
             dat_arr = np.array(rec.tolist()) #pirate
             #get rid of the 'index' column from pandas
-            data = dat_arr[0:dat_arr.shape[0], 2:self.col_num + 2]
+            data = dat_arr[0:dat_arr.shape[0], 1:self.col_num + 1]
             data = data.astype(np.float)
-            self.data = correct_data(data)
+            self.data = self.correct_data_order(data)
 
             if not units:
                 self.units = guess_units(self.data)
@@ -324,6 +310,7 @@ class FrameTime:
             self._validate_frames()
         except FrameError:
             raise DataError('Bad data', self.data, excel_file)
+        return self 
 
     def to_csv(self, outfile, units = None):
         """Export timing info to csv file
@@ -348,10 +335,10 @@ class FrameTime:
         filename = timestamp(outfile)
         with open(filename, 'wb') as out_file:
             writer = csv.writer(out_file, delimiter = ',')
-            writer.writerow(['file number','expected frame', 'start time', 'duration', 'stop time', 'notes'])
+            writer.writerow(['file number', 'start time', 'duration', 'stop time'])
             data = self.get_data(units)
 
-            out_data = generate_output(data)
+            out_data = self.generate_output(data)
             for frame in out_data:
                 writer.writerow(frame)
         return filename
@@ -377,8 +364,8 @@ class FrameTime:
         try:
             filename = timestamp(outfile)
             data = self.get_data(units)
-            data = generate_output(data)
-            df = DataFrame(data, columns = ['file number', 'expected frame', 'start time', 'duration', 'stop time'])
+            data = self.generate_output(data)
+            df = DataFrame(data, columns = ['file number', 'start time', 'duration', 'stop time'])
             df.to_excel(filename, sheet_name = 'Sheet1', index = False)
             return filename
         except IOError:
@@ -405,6 +392,35 @@ class FrameTime:
         else:
             return self.to_sec()
 
+    def get_start_times(self, units = None):
+        if not units:
+            units = self.units
+        n_rows, n_col = self.data.shape
+        start_times = np.zeros((n_rows, 2))
+        for k, row in enumerate(self.data):
+            start_times[k, 0] = row[0]
+            start_times[k, 1] = row[self.start] 
+        if self.units == 'min' and units == 'sec':
+            return start_times*60.0
+        elif self.units == 'sec' and units == 'min':
+            return start_times/60.0
+        return start_times
+
+    def get_stop_times(self, units = None):
+        if not units:
+            units = self.units
+        n_rows, n_col = self.data.shape
+        stop_times = np.zeros((n_rows, 2))
+        for k, row in enumerate(self.data):
+            stop_times[k, 0] = row[0]
+            stop_times[k, 1] = row[self.stop] 
+        if self.units == 'min' and units == 'sec':
+            return stop_times*60.0
+        elif self.units == 'sec' and units == 'min':
+            return stop_times/60.0
+        return stop_times
+
+
     def get_midtimes(self, units=None):
         if not units:
             units = self.units
@@ -412,7 +428,7 @@ class FrameTime:
         midtimes = np.zeros((n_rows, 2))
         for k, row in enumerate(self.data):
             midtimes[k, 0] = row[0]
-            midtimes[k, 1] = (row[1] + row[3])/2.0 
+            midtimes[k, 1] = row[self.start] + row[self.duration]/2.0 
         if self.units == 'min' and units == 'sec':
             return midtimes*60.0
         elif self.units == 'sec' and units == 'min':
