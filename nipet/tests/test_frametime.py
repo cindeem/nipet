@@ -94,7 +94,8 @@ class TestFrametime(TestCase):
                                         [3, 4, 5, 6]]))
 
     def test_from_ecat(self):
-        infile = join(split(abspath(__file__))[0], 'data','fdg_2frames.v')
+        infile = join(split(abspath(__file__))[0], 'data',
+                      'frametime','fdg_2frames.v')
         infile2 = join(split(abspath(__file__))[0], 'data', 'fdg_4frames.v')
         sample_data = np.array([[   1.,    0.,  300.,  300.],
                                 [   2.,  300.,  600.,  300.]])
@@ -119,7 +120,8 @@ class TestFrametime(TestCase):
 
 
     def test_from_csv(self):
-        infile = join(split(abspath(__file__))[0], 'data','sample_frames.csv')
+        infile = join(split(abspath(__file__))[0], 'data',
+                      'frametime', 'sample_frames.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -130,7 +132,8 @@ class TestFrametime(TestCase):
         assert_equal(ft.get_units(), 'sec')
 
     def test_from_excel(self):
-        infile = join(split(abspath(__file__))[0], 'data','sample_frames.xls')
+        infile = join(split(abspath(__file__))[0], 'data',
+                      'frametime', 'sample_frames.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -141,7 +144,8 @@ class TestFrametime(TestCase):
         assert_equal(ft.get_units(), 'sec')
 
     def test_to_csv(self):
-        outfile = join(split(abspath(__file__))[0], 'data','sample_out.csv')
+        outfile = join(split(abspath(__file__))[0], 'data',
+                       'frametime', 'sample_out.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -159,7 +163,8 @@ class TestFrametime(TestCase):
             os.remove(f1)
 
     def test_to_excel(self):
-        outfile = join(split(abspath(__file__))[0], 'data','sample_out.xls')
+        outfile = join(split(abspath(__file__))[0], 'data',
+                       'frametime', 'sample_out.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],

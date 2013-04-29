@@ -5,7 +5,7 @@ from scipy.ndimage import affine_transform
 """
 Note that np masked arrays use True to indicate that a value is masked.
 This is converted to the more intuitive False to indicate that a value is masked,
-but the former is represented internally, so be careful of using that
+but the former is used internally, so be careful with masks
 """
 def data_4d(data_block, mask_file):
     """
@@ -25,12 +25,12 @@ def frame_data(frame, mask_file, fill_value):
     mask = reslice_mask(frame, mask_file)
     return extract_values(data, mask, fill_value = fill_value)
     
-def frame_stats(frame, mask_file):
+def frame_stats(frame, mask_file, fill_value = 0):
     """
     applies mask to frame,
     returns mean and std of relevant data
     """
-    data = data_from_frame(frame, mask_file, fill_value = fill_value)
+    data = frame_data(frame, mask_file, fill_value = fill_value)
     return mean(data), std(data)
 
 def apply_mask_to_frame(frame, mask_file): 
@@ -72,7 +72,8 @@ def mask_array(data, mask, fill_value = 0):
     if data.shape != mask.shape:
         raise Exception('data and mask shape don\'t match')
     mask = invert_mask(mask)
-    m_array = np.ma.MaskedArray(data, mask=mask, fill_value=fill_value)
+    valid_data = np.ma.MaskedArray(data, np.isnan(data))
+    m_array = np.ma.MaskedArray(valid_data, mask=mask, fill_value=fill_value)
     return m_array
 
 def apply_mask(data, mask, fill_value):
@@ -107,6 +108,12 @@ def convert_mask(mask, type):
         bool
     """
     return np.array(mask, dtype = type)
+
+def threshold_to_binary(mask, threshold):
+    """
+    Converts a threshold style mask into a binary mask
+    """
+    return mask > threshold
 
 def invert_mask(mask):
     """
