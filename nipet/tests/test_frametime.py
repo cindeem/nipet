@@ -94,13 +94,14 @@ class TestFrametime(TestCase):
                                         [3, 4, 5, 6]]))
 
     def test_from_ecat(self):
-        infile = join(split(abspath(__file__))[0], 'data/fdg_2frames.v')
+        infile = join(split(abspath(__file__))[0], 'data','fdg_2frames.v')
         infile2 = join(split(abspath(__file__))[0], 'data', 'fdg_4frames.v')
         sample_data = np.array([[   1.,    0.,  300.,  300.],
-                                [   2.,  300.,  300.,  600.]])
+                                [   2.,  300.,  600.,  300.]])
 
         ft = frametime.FrameTime()
         ft.from_ecats(infile, 'sec')
+        print ft.data
         assert_equal(ft.data, sample_data)
         assert_equal(ft.get_units(), 'sec')
         
@@ -108,17 +109,17 @@ class TestFrametime(TestCase):
         ft = frametime.FrameTime()
         ft.from_ecats([infile2, infile])
         sampledata = np.array([[   1,    0,  300,  300],
-                               [   2,  300,  300,  600],
-                               [   3,  600,  300,  900],
-                               [   4,  900,  300, 1200],
-                               [   5, 1200,  300, 1500],
-                               [   6, 1500,  300, 1800]])
+                               [   2,  300,  600,  300],
+                               [   3,  600,  900,  300],
+                               [   4,  900,  1200, 300],
+                               [   5, 1200,  1500, 300],
+                               [   6, 1500,  1800, 299]])
         assert_equal(ft.data, sampledata)
 
 
 
     def test_from_csv(self):
-        infile = join(split(abspath(__file__))[0], 'data/sample_frames.csv')
+        infile = join(split(abspath(__file__))[0], 'data','sample_frames.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -129,7 +130,7 @@ class TestFrametime(TestCase):
         assert_equal(ft.get_units(), 'sec')
 
     def test_from_excel(self):
-        infile = join(split(abspath(__file__))[0], 'data/sample_frames.xls')
+        infile = join(split(abspath(__file__))[0], 'data','sample_frames.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -140,7 +141,7 @@ class TestFrametime(TestCase):
         assert_equal(ft.get_units(), 'sec')
 
     def test_to_csv(self):
-        outfile = join(split(abspath(__file__))[0], 'data/sample_out.csv')
+        outfile = join(split(abspath(__file__))[0], 'data','sample_out.csv')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -158,7 +159,7 @@ class TestFrametime(TestCase):
             os.remove(f1)
 
     def test_to_excel(self):
-        outfile = join(split(abspath(__file__))[0], 'data/sample_out.xls')
+        outfile = join(split(abspath(__file__))[0], 'data','sample_out.xls')
         sample_data = np.array([[1., 0., 15., 15.],
                                 [2., 15., 30., 15.],
                                 [3., 45., 60., 15.],
@@ -253,3 +254,19 @@ class TestFrametime(TestCase):
                              [4, 52.5],
                              [5, 75]])
         assert_equal(midtimes, expected)
+
+    def test_times_to_frames(self):
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 30., 15.],
+                                [3., 30., 45., 15.],
+                                [4., 45., 60., 15.],
+                                [5., 60., 90., 30.]])
+
+        ft = frametime.FrameTime()
+        ft.data = sample_data
+        ft_indices = ft.times_to_frames(15, 60)
+        indices = np.array([2, 3, 4])
+
+        assert_equal(indices, ft_indices)
+        assert_raises(Exception, ft.times_to_frames, 14, 29)
+ 
