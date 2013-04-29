@@ -194,13 +194,16 @@ class FrameTime:
         return self 
 
     def _time_from_ecat(self, ecat_file, ft_array):
+        """ fills in a fiels of empty ft_array using
+        data from the ecat mlist and subheaders"""
         shdrs = ecat.load(ecat_file).get_subheaders()
         mlist = ecat.load(ecat_file).get_mlist()
         framelist = mlist.get_series_framenumbers().values()
         for fn, shdr in zip(framelist, shdrs.subheaders):
             start = shdr['frame_start_time'] / 1000
             duration = shdr['frame_duration'] / 1000
-            ft_array[fn, 1:4] = [start, duration, start + duration]
+            idx = np.where(ft_array[:,0] == fn)
+            ft_array[idx, 1:] = [start, duration, start + duration]
        
     def from_ecats(self, ecat_files, units=None):
         """Pulls timing info from ecat file(s) and stores in an array"""
@@ -208,8 +211,10 @@ class FrameTime:
             ecat_files = [ecat_files]
         nframes = 0
         for f in ecat_files:
-            x, y, z, nf = ecat.load(f).get_shape()
-            nframes += nf
+            hdr = ecat.load(f).get_header()
+            if hdr['num_frames'] > nframes:
+                nframes = hdr['num_frames']
+                print nframes
         empty_ft = self.generate_empty_protocol(nframes)
 
         for ef in ecat_files:
@@ -427,3 +432,18 @@ class FrameTime:
         elif self.units == 'sec' and units == 'min':
             return midtimes/60.0
         return midtimes
+
+    def time_to_frames(self, start, stop):
+        """
+        Given start, stop
+        finds range of frames spanning exactly start-stop,
+        returns array with all of those indices.
+        Should rename.
+        """
+        if start not in self.data[:, self.start]:
+            print "Please pick a valid start time: " + self.data[:, self.start] 
+        if stop not in self.data[:, self.stop]:
+            print "Please pick a valid stop time: " + self.data[:, self.stop] 
+        start_index = np.where(self.data[:, self.start] == start)
+        stop_index = np.where(self.data[:, self.stop] == stop)
+        return np.arange(start_index, stop_index + 1)
