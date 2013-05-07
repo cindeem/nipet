@@ -7,16 +7,17 @@ from .. import roi
 
 class TestROI(TestCase):
     
-    def test_mask_array(self):
-        data = np.array([[[np.nan, 2, 3], [4, 5, np.nan]],
+    def setUp(self):
+        self.data = np.array([[[np.nan, 2, 3], [4, 5, np.nan]],
                          [[1, 3, 5], [2, 4, 7]]])
 
-        #int representation, for human reading
-        mask = np.array([[[1, 0, 1], [0, 1, 1]],
+        self.mask = np.array([[[1, 0, 1], [0, 1, 1]],
                          [[0, 0, 0], [1, 1, 0]]])
-        #boolean representation
-        mask = np.array([[[True, False, True], [False, True, True]],
-                         [[False, False, False], [True, True, False]]])
+        
+
+    def test_mask_array(self):
+        data, mask = self.data, self.mask
+
         m_data = roi.mask_array(data, mask)
 
         expected_mask = np.array([[[True, True, False], [True, False, True]],
@@ -35,15 +36,7 @@ class TestROI(TestCase):
         assert_equal(masked_data, m_data)
 
     def test_apply_mask(self):
-        data = np.array([[[np.nan, 2, 3], [4, 5, np.nan]],
-                         [[1, 3, 5], [2, 4, 7]]])
-
-        #int representation, for human reading
-        mask = np.array([[[1, 0, 1], [0, 1, 1]],
-                         [[0, 0, 0], [1, 1, 0]]])
-        #boolean representation
-        mask = np.array([[[True, False, True], [False, True, True]],
-                         [[False, False, False], [True, True, False]]])
+        data, mask = self.data, self.mask
 
         expected_output = np.array([[[0, 0, 3], [0, 5, 0]],
                                     [[0, 0, 0], [2, 4, 0]]])
@@ -53,27 +46,22 @@ class TestROI(TestCase):
         assert_equal(expected_output, roi.apply_mask(data, mask, 0))
 
     def extract_values(self):
-        data = np.array([[[np.nan, 2, 3], [4, 5, np.nan]],
-                         [[1, 3, 5], [2, 4, 7]]])
-
-        #int representation, for human reading
-        mask = np.array([[[1, 0, 1], [0, 1, 1]],
-                         [[0, 0, 0], [1, 1, 0]]])
-        #boolean representation
-        mask = np.array([[[True, False, True], [False, True, True]],
-                         [[False, False, False], [True, True, False]]])
+        data, mask = self.data, self.mask
 
         expected_output = np.array([2, 3, 4, 5, 1, 3, 5, 2, 4, 7])
         assert_equal(extract_values(data, mask, 0), expected_output)
 
     def test_reslice_mask(self):
-        raise Exception('not implemented')
+        raise Exception('test not written')
 
     def test_frame_data(self):
-        raise Exception('not implemented')
+        raise Exception('test not written')
     
-    def test_frame_stats(self):
-        raise Exception('not implemented')
+    def test_frame_values(self):
+        raise Exception('test not written')
 
-    def test_data_4d(self):
-        raise Exception('not implemented')
+    def test_frame_stats(self):
+        raise Exception('test not written')
+
+    def test_process_input(self):
+        raise Exception('test not written')
