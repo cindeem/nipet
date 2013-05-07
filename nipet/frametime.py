@@ -441,10 +441,10 @@ class FrameTime:
         returns array with all of those indices.
         Should rename.
         """
-        if start not in self.data[:, self.start]:
-            raise Exception("Please pick a valid start time: " + self.data[:, self.start])
-        if stop not in self.data[:, self.stop]:
-            raise Exception("Please pick a valid stop time: " + self.data[:, self.stop])
-        start_index = np.where(self.data[:, self.start] == start)[0][0] + 1
-        stop_index = np.where(self.data[:, self.stop] == stop)[0][0] + 1
+        if start not in self.to_min()[:, self.start]:
+            raise Exception("Please pick a valid start time: " + self.to_min()[:, self.start])
+        if stop not in self.to_min()[:, self.stop]:
+            raise Exception("Please pick a valid stop time: " + self.to_min()[:, self.stop])
+        start_index = np.where(self.to_min()[:, self.start] == start)[0][0] + 1
+        stop_index = np.where(self.to_min()[:, self.stop] == stop)[0][0] + 1
         return np.arange(start_index, stop_index + 1)

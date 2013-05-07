@@ -264,6 +264,7 @@ class TestFrametime(TestCase):
 
         ft = frametime.FrameTime()
         ft.data = sample_data
+        ft.units = 'min'
         ft_indices = ft.times_to_frames(15, 60)
         indices = np.array([2, 3, 4])
 
