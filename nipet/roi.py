@@ -84,7 +84,7 @@ def stats_over_time(input_files, mask_file):
  
     return process_input(input_files, mask_file, None, 'stats')
 
-def process_input(input_files, mask_file, output_file, output_type):
+def return_output(input_files, mask_file, output_type, output_file=None):
     """
     Processes 4-D input data, and returns output.
     
@@ -101,33 +101,74 @@ def process_input(input_files, mask_file, output_file, output_type):
     output_type:
         Specify what the output should be.
         The valid options are:
-            frames_files
+            'frames_files' : returns list of strings 
                 multiple frames of data with mask applied
                 written to output files
-            4d_file
+            4d_file : string
                 4d data block with mask applied
                 written to output file
-            frames
+            frames : array
                 Frames of data with the masked applied as an np array
-            4d
+            4d : array 
                 4d block of data as an np array, with the mask applied to each frame
-            values
+            values : array
                 An array of the values that were not masked in each frame 
-            stats
+            stats : flattened array
                 An np array with the mean and std for desired values in each frame
     """
     if output_type == 'frames' or output_type == '4d':
         f = frame_data
-
     elif output_type == 'frames_files' or output_type == '4d_file':
+        if output_file == None:
+            raise Exception('Must specify an output file if requested output is %s'%output_type)
         f = frame_data
     elif output_type == 'values':
         f = frame_values
     elif output_type == 'stats':
         f = frame_stats 
     else:
-        raise Exception('Output should be "frames", "4d", "values", or "stats"')
+        raise Exception('output_type should be in "frames_file", "4d_file", \
+                        "frames", "4d", "values", or "stats"')
 
+    output, affine = process_input(f, input_files, mask_file)
+   
+    if output_type == 'frames_files':
+        name, ext = split_archive_ext(output_file)
+        outfiles = []
+        for k, frame in enumerate(output):
+            outfile = name + '_frame_%04d'%k + ext
+            outfiles.append(outfile)
+            new_img = ni.Nifti1Image(data=frame, affine=affine) 
+            ni.save(new_img, outfile)
+        return outfiles
+    elif output_type == '4d_file':
+        name, ext = split_archive_ext(filename)
+        new_img = ni.Nifti1Image(data=output, affine=affine) 
+        ni.save(new_img, output_file)
+        return output_file
+    elif output_type == 'frames' or output_type == '4d':
+        return output, affine
+    elif output_type == 'stats' or output_type == 'values':
+        return output
+    else:
+        raise Exception('Output should be "frames", "4d", "values", or "stats"')
+            
+   
+def process_input(f, input_files, mask_file):
+    """
+    Processes input masked with the mask defined in mask_file
+    with the function f.
+
+    Parameters
+    ----------
+    f
+        A function that takes a single input file, a mask file, and a fill value,
+        and returns some data as an array
+    input_files
+        A string defining a file, or a list of strings
+    mask_file
+        A string that gives a file defining a mask
+    """
     if isinstance(input_files, str):
         img = ni.load(input_files)
         data = img.get_data()
@@ -149,31 +190,9 @@ def process_input(input_files, mask_file, output_file, output_type):
         output = np.array(output)
 
     else:
-        raise Exception('Input should be the name of a 4d .nii file, or a list of 3d .nii files')
-        
-    if output_type == 'frames_files':
-        name, ext = split_archive_ext(output_file)
-        outfiles = []
-        for k, frame in enumerate(output):
-            outfile = name + '_frame_%04d'%k + ext
-            outfiles.append(outfile)
-            new_img = ni.Nifti1Image(data=frame, affine=affine) 
-            ni.save(new_img, outfile)
-        return outfiles
-    elif output_type == '4d_file':
-        name, ext = split_archive_ext(filename)
-        new_img = ni.Nifti1Image(data=output, affine=affine) 
-        ni.save(new_img, output_file)
-        return output_file
-    elif output_type == 'frames' or output_type == '4d' or output_type == 'values':
-        return output, affine
-
-    elif output_type == 'stats':
-        return output
-    else:
-        raise Exception('Output should be "frames", "4d", "values", or "stats"')
-            
-   
+        raise Exception('Input %s should be the name of a 4d .nii file, or a list of 3d .nii files'% input_files)
+    return output, affine
+     
 def frame_data(frame_file, mask_file, fill_value=0):
     """
     Returns the data in the .nii file specified by frame_file,
@@ -237,7 +256,7 @@ def mask_array(data, mask, fill_value = 0):
     if data.shape != mask.shape:
         raise Exception('data and mask shape don\'t match')
     mask = invert_mask(mask)
-    valid_data = np.ma.MaskedArray(data, np.isnan(data))
+    valid_data = np.ma.MaskedArray(data, np.logical_or(np.isnan(data), data == 0))
     m_array = np.ma.MaskedArray(valid_data, mask=mask, fill_value=fill_value)
     return m_array
 
@@ -253,7 +272,7 @@ def extract_values(data, mask, fill_value=0):
     Given 3-D data and a mask, return all non masked values after
     the mask has been applied to the data.
     """
-    return mask_array(data, mask, fill_value).compressed()
+    return np.array(mask_array(data, mask, fill_value).compressed())
 
 def convert_mask(mask, type):
     """
