@@ -10,6 +10,11 @@ but the former is used internally, so be careful
 when accessing the mask element of masked arrays
 """
 def split_archive_ext(filename, archive_exts = ['.gz']):
+    """
+    Performs similar function to os.path.splitext,
+    but properly splits off archive extensions specified
+    by archive_exts
+    """
     name, ext = splitext(filename)
     if ext in archive_exts:
         name, ext2 = splitext(name)
@@ -17,27 +22,99 @@ def split_archive_ext(filename, archive_exts = ['.gz']):
     return name, ext
 
 def rois_over_time(input_files, mask_file, output_file, output_type):
+    """
+    Returns the frames in the ROIs specified by mask_file from input_files,
+    in a variety of formats.
+     
+    Parameters
+    --------
+    input_files:
+        A string containing a 4-d .nii file,
+        or a list of strings containing a list of .nii frames
+    mask_file:
+        File containing the mask to be used
+    output_file:
+        Base filename of output file. If output_type does not involve
+        outputting a file, this will be ignored.
+    output_type:
+        Specify what the output should be.
+        The valid options are:
+            frames_files
+                multiple frames of data with mask applied
+                written to output files
+            4d_file
+                4d data block with mask applied
+                written to output file
+            frames
+                Frames of data with the masked applied as an np array
+            4d
+                4d block of data as an np array, with the mask applied to each frame
+    """
+
     return process_input(input_files, mask_file, output_file, output_type)
 
 def values_over_time(input_files, mask_file):
+    """
+    Returns the values in the ROIs in input_files specified by mask_file
+     
+    Parameters
+    --------
+    input_files:
+        A string containing a 4-d .nii file,
+        or a list of strings containing a list of .nii frames
+    mask_file:
+        File containing the mask to be used
+   """
+ 
     return process_input(input_files, mask_file, None, 'values')
 
-def stats_over_time(input_files, mask_file, output_file, output_type):
+def stats_over_time(input_files, mask_file):
+    """
+
+    Returns the mean values and standard deviations in the ROIs in input_files specified by mask_value
+ 
+    Parameters
+    --------
+    input_files:
+        A string containing a 4-d .nii file,
+        or a list of strings containing a list of .nii frames
+    mask_file:
+        File containing the mask to be used
+    """
+ 
     return process_input(input_files, mask_file, None, 'stats')
 
 def process_input(input_files, mask_file, output_file, output_type):
     """
-    Takes in 4d data in either a list or a 4d data block,
-    and outputs:
-        frames_files - multiple frames of data with mask applied
-            written to output file
-        4d_file - 4d data block with mask applied
-            written to output file
-        frames - frames of data as an np array
-        4d - 4d block of data as an np array
-        values - values of the ROIs over time
-        stats - the mean and std over time
-    ""
+    Processes 4-D input data, and returns output.
+    
+    Parameters
+    ---------
+    input_files:
+        A string containing a 4-d .nii file,
+        or a list of strings containing a list of .nii frames
+    mask_file:
+        File containing the mask to be used
+    output_file:
+        Base filename of output file. If output_type does not involve
+        outputting a file, this will be ignored.
+    output_type:
+        Specify what the output should be.
+        The valid options are:
+            frames_files
+                multiple frames of data with mask applied
+                written to output files
+            4d_file
+                4d data block with mask applied
+                written to output file
+            frames
+                Frames of data with the masked applied as an np array
+            4d
+                4d block of data as an np array, with the mask applied to each frame
+            values
+                An array of the values that were not masked in each frame 
+            stats
+                An np array with the mean and std for desired values in each frame
     """
     if output_type == 'frames' or output_type == '4d':
         f = frame_data
@@ -98,6 +175,11 @@ def process_input(input_files, mask_file, output_file, output_type):
             
    
 def frame_data(frame_file, mask_file, fill_value=0):
+    """
+    Returns the data in the .nii file specified by frame_file,
+    after filling in all values not in the ROI specified by mask_file
+    with 0.
+    """
     img = ni.load(frame_file)
     data = img.get_data()
     mask = reslice_mask(frame_file, mask_file)
@@ -105,8 +187,10 @@ def frame_data(frame_file, mask_file, fill_value=0):
 
 def frame_values(frame_file, mask_file, fill_value=0):
     """
-    applies mask to frame,
-    returns vector of relevant data points
+    Returns the values of the data in ROIs in the .nii file specified by frame_file,
+    after filling in all values not in the ROI specified by mask_file
+    with 0.
+    
     """
     img = ni.load(frame_file) 
     data = img.get_data()
@@ -115,9 +199,12 @@ def frame_values(frame_file, mask_file, fill_value=0):
     
 def frame_stats(frame_file, mask_file, fill_value = 0):
     """
-    applies mask to frame,
-    returns mean and std of relevant data
+    Returns the mean and std for data in the ROIs in the .nii file specified by frame_file,
+    after filling in all values not in the ROI specified by mask_file
+    with 0.
+    
     """
+    
     data = frame_data(frame_file, mask_file, fill_value = fill_value)
     return np.mean(np.ma.MaskedArray(data, np.isnan(data))), \
            np.std(np.ma.MaskedArray(data, np.isnan(data)))
@@ -142,9 +229,10 @@ def reslice_mask(data_file, mask_file, order = 0):
 
 def mask_array(data, mask, fill_value = 0):
     """
-    Given 3-D data and a mask, returns a masked array
+    Given 3-D data in an np array and a mask, returns a masked array
     with the mask applied to the data.
-    Assumes that the mask is (1 = valid), so it inverts the mask
+    Assumes that the mask has (1 = valid), so it inverts the mask
+    in order to use numpy's masked array libraries.
     """
     if data.shape != mask.shape:
         raise Exception('data and mask shape don\'t match')
@@ -155,14 +243,15 @@ def mask_array(data, mask, fill_value = 0):
 
 def apply_mask(data, mask, fill_value=0):
     """
-    Returns data with mask applied.
+    Given an np array of data and mask, and a fill value,
+    returns data after all masked values have been filled with fill_value
     """
     return mask_array(data, mask, fill_value).filled()
 
 def extract_values(data, mask, fill_value=0):
     """
-    Given 3-D data and a mask, return the values from the data
-    after mask has been applied in a vector
+    Given 3-D data and a mask, return all non masked values after
+    the mask has been applied to the data.
     """
     return mask_array(data, mask, fill_value).compressed()
 
@@ -174,15 +263,17 @@ def convert_mask(mask, type):
     """
     return np.array(mask, dtype = type)
 
-def threshold_to_binary(mask, threshold):
+def threshold_to_binary(mask, threshold, exclusive = True):
     """
     Converts a threshold style mask into a binary mask
     """
-    return mask > threshold
+    if exclusive:
+        return mask > threshold
+    return mask >= threshold
 
 def invert_mask(mask):
     """
-    inverts a mask
+    inverts a binary mask
     returns a boolean mask
     """
     return mask < 1
