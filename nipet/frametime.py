@@ -392,6 +392,10 @@ class FrameTime:
             return self.to_sec()
 
     def get_start_times(self, units = None):
+        """
+        Returns the start times of the frames in this frametime object
+        """
+
         if not units:
             units = self.units
         n_rows, n_col = self.data.shape
@@ -406,6 +410,10 @@ class FrameTime:
         return start_times
 
     def get_stop_times(self, units = None):
+        """
+        Returns the stop times of the frames in this frametime object
+        """
+
         if not units:
             units = self.units
         n_rows, n_col = self.data.shape
@@ -421,6 +429,9 @@ class FrameTime:
 
 
     def get_midtimes(self, units=None):
+        """
+        Returns the midpoint times of the frames in this frametime object
+        """
         if not units:
             units = self.units
         n_rows, n_col = self.data.shape
@@ -434,12 +445,11 @@ class FrameTime:
             return midtimes/60.0
         return midtimes
 
-    def times_to_frames(self, start, stop):
+    def spanning_frames(self, start, stop):
         """
         Given start, stop
         finds range of frames spanning exactly start-stop,
         returns array with all of those indices.
-        Should rename.
         """
         if start not in self.to_min()[:, self.start]:
             raise Exception("Please pick a valid start time: " + self.to_min()[:, self.start])
