@@ -16,6 +16,18 @@ class TestROI(TestCase):
                          [[0, 0, 0], [1, 1, 0]]])
         
         np.random.seed(12345)
+        self.expected_data = np.array([[[[ 0.92961609, 0, 0.18391881],
+                                    [ 0, 0.56772503, 0.5955447]],
+
+                                   [[ 0, 0, 0],
+                                    [ 0.65356987, 0.74771481, 0]]],
+
+                                  [[[ 0.0083883, 0, 0.29870371],
+                                    [ 0, 0.80981255, 0.87217591]],
+
+                                   [[ 0,  0,  0],
+                                    [ 0.71745362, 0.46759901, 0]]]])
+
 
         self.affine = np.eye(4)
         self.affine[:, 3] = 1
@@ -137,10 +149,36 @@ class TestROI(TestCase):
         print data
         known_values = np.array([0.92961609, 0.18391881, 0.56772503, 0.5955447, 0.65356987, 0.74771481])
         known_stats = (0.3065074430565158, 0.34567164953488178)
-        assert_almost_equal(data[0], expected_data)
-        assert_almost_equal(data_4d[0], expected_data)
+        assert_almost_equal(data[0], self.expected_data)
+        assert_almost_equal(data_4d[0], self.expected_data)
         assert_almost_equal(values[0][0], known_values)
         assert_almost_equal(stats[0][0], known_stats)
 
     def test_process_input(self):
-        raise Exception('test not written')
+
+        known_values = np.array([0.92961609, 0.18391881, 0.56772503, 0.5955447, 0.65356987, 0.74771481])
+        known_stats = (0.3065074430565158, 0.34567164953488178)
+
+        data = roi.process_input(self.file_4d, self.mask_file, 'data')
+        assert_almost_equal(data[0], self.expected_data)
+        values = roi.process_input(self.file_4d, self.mask_file, 'values')
+        assert_almost_equal(values, known_values)
+
+        outfile = roi.process_input(self.file_4d, self.mask_file, '4d_file', 'test_output.nii')
+        out_data = ni.load(outfile).get_data()
+        assert_equal(out_data, self.expected_data)
+
+        outfiles = roi.process_input(self.file_4d, self.mask_file, 'frames_files', 'test_output.nii')
+        assert_equal(self.expected_data[1], ni.load(outfiles[1]).get_data())
+
+        files = [self.file1, self.file2]
+        outfile = roi.process_input(files, self.mask_file, '4d_file', 'test_output.nii')
+        out_data = ni.load(outfile).get_data()
+        assert_equal(out_data, self.expected_data)
+
+        outfiles = roi.process_input(files, self.mask_file, 'frames_files', 'test_output.nii')
+        assert_equal(self.expected_data[1], ni.load(outfiles[1]).get_data())
+
+        out_data = roi.process_input(files, self.mask_file, 'frames', None)
+        assert_equal(self.expected_data, out_data[0])
+        assert_equal(self.affine, out_data[1])
