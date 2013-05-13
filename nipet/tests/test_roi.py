@@ -25,6 +25,7 @@ class TestROI(TestCase):
 
         self.file1 = 'test_frame_0001.nii'
         self.file2 = 'test_frame_0002.nii'
+        self.file_4d = 'test_4d.nii'
         self.mask_file = 'mask_test.nii'
 
         new_img = ni.Nifti1Image(self.frame1, self.affine)
@@ -33,10 +34,14 @@ class TestROI(TestCase):
         ni.save(new_img, self.file2) 
         new_img = ni.Nifti1Image(self.mask, self.affine)
         ni.save(new_img, self.mask_file) 
+        new_img = ni.Nifti1Image(np.array((self.frame1, self.frame2)), self.affine)
+        ni.save(new_img, self.file_4d) 
 
     def tearDown(self):
         os.remove(self.file1)
         os.remove(self.file2)
+        os.remove(self.mask_file)
+        os.remove(self.file_4d)
 
     def test_mask_array(self):
         data, mask = self.data, self.mask
@@ -99,8 +104,43 @@ class TestROI(TestCase):
         known_stats = (0.3065074430565158, 0.34567164953488178)
         assert_equal(stats, known_stats)
 
-    def test_process_input(self):
-        raise Exception('test not written')
+    def test_pick_function(self):
+        assert_equal(roi._pick_function(['test'], 'frames', None), roi.frame_data)
+        assert_equal(roi._pick_function(['test'], '4d', None), roi.frame_data)
+        assert_equal(roi._pick_function(['test'], 'frames_files', 'file.nii'), roi.frame_data)
+        assert_equal(roi._pick_function(['test'], '4d_file', 'file.nii'), roi.frame_data)
+        assert_raises(Exception, roi._pick_function, ['test'], 'frames_files', None)
+        assert_raises(Exception, roi._pick_function, 'test', '4d_file', None)
+        assert_equal(roi._pick_function(['test'], 'values', None), roi.frame_values)
+        assert_equal(roi._pick_function(['test'], 'stats', None), roi.frame_stats)
 
-    def test_return_output(self):
+        assert_equal(roi._pick_function('test', 'values', None), roi.extract_values)
+        assert_equal(roi._pick_function('test', 'frames', None), roi.apply_mask)
+        assert_equal(roi._pick_function('test', 'stats', None), roi.get_stats)
+
+    def test_process_files(self):
+        data = roi.process_files(roi.frame_data, [self.file1, self.file2], self.mask_file, 0)
+        data_4d = roi.process_files(roi.apply_mask, self.file_4d, self.mask_file, 0)
+        values = roi.process_files(roi.frame_values, [self.file1], self.mask_file, 0)
+        stats = roi.process_files(roi.frame_stats, [self.file1], self.mask_file, 0)
+        expected_data = np.array([[[[ 0.92961609, 0, 0.18391881],
+                                    [ 0, 0.56772503, 0.5955447]],
+
+                                   [[ 0, 0, 0],
+                                    [ 0.65356987, 0.74771481, 0]]],
+
+                                  [[[ 0.0083883, 0, 0.29870371],
+                                    [ 0, 0.80981255, 0.87217591]],
+
+                                   [[ 0,  0,  0],
+                                    [ 0.71745362, 0.46759901, 0]]]])
+        print data
+        known_values = np.array([0.92961609, 0.18391881, 0.56772503, 0.5955447, 0.65356987, 0.74771481])
+        known_stats = (0.3065074430565158, 0.34567164953488178)
+        assert_almost_equal(data[0], expected_data)
+        assert_almost_equal(data_4d[0], expected_data)
+        assert_almost_equal(values[0][0], known_values)
+        assert_almost_equal(stats[0][0], known_stats)
+
+    def test_process_input(self):
         raise Exception('test not written')
