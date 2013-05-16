@@ -87,7 +87,6 @@ class FrameTime:
         If there are any nan's, remove that frame.
         """
         n_rows, n_col = data.shape
-        print data
         if data[n_rows - 1, self.stop] < data[n_rows - 1, self.duration]:
             data[:, [self.stop, self.duration]] = data[:, [self.duration, self.stop]]
         data = data[~np.isnan(data).any(axis=1)]
@@ -124,7 +123,6 @@ class FrameTime:
     def _check_frame(self, frame, eps = 1e-4):
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
-        print frame
         if frame.shape[0] != self.col_num:
             logging.error('Bad number of columns')
             raise FrameError('Bad number of columns')
@@ -134,9 +132,6 @@ class FrameTime:
             raise FrameError('Extra rows')
             return False
         elif abs(frame[self.duration] - (frame[self.stop] - frame[self.start])) > eps:
-            print frame[self.stop]
-            print frame[self.duration]
-            print frame[self.duration] - (frame[self.stop] - frame[self.start])
             logging.error('Frame entries unaligned')
             raise FrameError('Frame entries unaligned')
             return False
@@ -437,3 +432,18 @@ class FrameTime:
         elif self.units == 'sec' and units == 'min':
             return midtimes/60.0
         return midtimes
+
+    def time_to_frames(self, start, stop):
+        """
+        Given start, stop
+        finds range of frames spanning exactly start-stop,
+        returns array with all of those indices.
+        Should rename.
+        """
+        if start not in self.data[:, self.start]:
+            print "Please pick a valid start time: " + self.data[:, self.start] 
+        if stop not in self.data[:, self.stop]:
+            print "Please pick a valid stop time: " + self.data[:, self.stop] 
+        start_index = np.where(self.data[:, self.start] == start)
+        stop_index = np.where(self.data[:, self.stop] == stop)
+        return np.arange(start_index, stop_index + 1)
