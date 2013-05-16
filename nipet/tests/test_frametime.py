@@ -101,6 +101,7 @@ class TestFrametime(TestCase):
 
         ft = frametime.FrameTime()
         ft.from_ecats(infile, 'sec')
+        print ft.data
         assert_equal(ft.data, sample_data)
         assert_equal(ft.get_units(), 'sec')
         
@@ -253,3 +254,26 @@ class TestFrametime(TestCase):
                              [4, 52.5],
                              [5, 75]])
         assert_equal(midtimes, expected)
+
+    def test_spanning_frames(self):
+        sample_data = np.array([[1., 0., 15., 15.],
+                                [2., 15., 30., 15.],
+                                [3., 30., 45., 15.],
+                                [4., 45., 60., 15.],
+                                [5., 60., 90., 30.]])
+
+        ft = frametime.FrameTime()
+        ft.data = sample_data
+        ft.units = 'min'
+        ft_indices = ft.spanning_frames(15, 60)
+        indices = np.array([2, 3, 4])
+        assert_equal(indices, ft_indices)
+
+        ft.units = 'sec'
+        ft_indices = ft.spanning_frames(0.5, 1.5)
+
+        indices = np.array([3, 4, 5])
+        assert_equal(indices, ft_indices)
+
+        assert_raises(Exception, ft.spanning_frames, 14, 29)
+ 

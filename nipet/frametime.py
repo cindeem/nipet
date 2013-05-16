@@ -45,6 +45,7 @@ def calc_file_numbers(data):
         expected_frame = frame[0] + 1
         file_numbers.append(frame[0] - diff)
     return np.array(file_numbers)
+
 class FrameError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -87,7 +88,6 @@ class FrameTime:
         If there are any nan's, remove that frame.
         """
         n_rows, n_col = data.shape
-        print data
         if data[n_rows - 1, self.stop] < data[n_rows - 1, self.duration]:
             data[:, [self.stop, self.duration]] = data[:, [self.duration, self.stop]]
         data = data[~np.isnan(data).any(axis=1)]
@@ -124,7 +124,6 @@ class FrameTime:
     def _check_frame(self, frame, eps = 1e-4):
         """Checks a frame (1x4 array) for the proper shape,
         and if the duration is equal to stop_time - start_time."""
-        print frame
         if frame.shape[0] != self.col_num:
             logging.error('Bad number of columns')
             raise FrameError('Bad number of columns')
@@ -134,9 +133,6 @@ class FrameTime:
             raise FrameError('Extra rows')
             return False
         elif abs(frame[self.duration] - (frame[self.stop] - frame[self.start])) > eps:
-            print frame[self.stop]
-            print frame[self.duration]
-            print frame[self.duration] - (frame[self.stop] - frame[self.start])
             logging.error('Frame entries unaligned')
             raise FrameError('Frame entries unaligned')
             return False
@@ -396,6 +392,10 @@ class FrameTime:
             return self.to_sec()
 
     def get_start_times(self, units = None):
+        """
+        Returns the start times of the frames in this frametime object
+        """
+
         if not units:
             units = self.units
         n_rows, n_col = self.data.shape
@@ -410,6 +410,10 @@ class FrameTime:
         return start_times
 
     def get_stop_times(self, units = None):
+        """
+        Returns the stop times of the frames in this frametime object
+        """
+
         if not units:
             units = self.units
         n_rows, n_col = self.data.shape
@@ -425,6 +429,9 @@ class FrameTime:
 
 
     def get_midtimes(self, units=None):
+        """
+        Returns the midpoint times of the frames in this frametime object
+        """
         if not units:
             units = self.units
         n_rows, n_col = self.data.shape
@@ -437,3 +444,17 @@ class FrameTime:
         elif self.units == 'sec' and units == 'min':
             return midtimes/60.0
         return midtimes
+
+    def spanning_frames(self, start, stop):
+        """
+        Given start, stop
+        finds range of frames spanning exactly start-stop,
+        returns array with all of those indices.
+        """
+        if start not in self.to_min()[:, self.start]:
+            raise Exception("Please pick a valid start time: " + self.to_min()[:, self.start])
+        if stop not in self.to_min()[:, self.stop]:
+            raise Exception("Please pick a valid stop time: " + self.to_min()[:, self.stop])
+        start_index = np.where(self.to_min()[:, self.start] == start)[0][0] + 1
+        stop_index = np.where(self.to_min()[:, self.stop] == stop)[0][0] + 1
+        return np.arange(start_index, stop_index + 1)
