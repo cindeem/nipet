@@ -84,7 +84,7 @@ def stats_over_time(input_files, mask_file):
  
     return process_input(input_files, mask_file, None, 'stats')
 
-def process_input(input_files, mask_file, output_type, output_file=None):
+def process_input(input_files, mask_file, output_type, output_file=None, fill_value=0):
     """
     Processes 4-D input data, and returns output.
     
@@ -125,6 +125,8 @@ def process_input(input_files, mask_file, output_type, output_file=None):
         affine = affine[0]
    
     if output_type == 'frames_files':
+        if output_file is None:
+            raise Exception("must specify an output file for output type")
         name, ext = split_archive_ext(output_file)
         outfiles = []
         for k, frame in enumerate(output):
@@ -134,7 +136,9 @@ def process_input(input_files, mask_file, output_type, output_file=None):
             ni.save(new_img, outfile)
         return outfiles
     elif output_type == '4d_file':
-        name, ext = split_archive_ext(filename)
+        if output_file is None:
+            raise Exception("must specify an output file for output type")
+        name, ext = split_archive_ext(output_file)
         new_img = ni.Nifti1Image(data=output, affine=affine) 
         ni.save(new_img, output_file)
         return output_file
